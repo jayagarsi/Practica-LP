@@ -36,15 +36,21 @@ statement
            | IF expr BEGINBLOCK statements (ELSE BEGINBLOCK statements ENDBLOCK)?   # ifStmt
            | WHILE expr BEGINBLOCK statements ENDBLOCK                              # whileStmt
            | FUNCID paramexp?                                                       # procCall
-           | READ ID                                                                # readStmt
-           | WRITE expr                                                             # writeStmt
+           | READ ident                                                             # readStmt
+           | WRITE paramexp                                                         # writeStmt
            | PLAY  expr                                                             # playStmt
+           | ident ADDLIST expr                                                     # addToListStmt
+           | CUTLIST ident '[' expr ']'                                             # cutFromListStmt
            ;
 
 left_expr  : ident
            ;
 
-expr : expr op=(PLUS|MINUS) expr                                    # arithmetic 
+expr : op=(PLUS|MINUS) expr                                         # arithmetic
+     | expr op=(MUL|DIV|MOD) expr                                   # arithmetic
+     | expr op=(PLUS|MINUS) expr                                    # arithmetic
+     | expr op=(EQU|NEQ|LET|LEQ|GET|GEQ)                            # relational
+     | LEN ident                                                    # lists
      | ident                                                        # exprIdent
      ;
         
@@ -58,7 +64,7 @@ ident : ID
 ASSIGN      : '<-' ;
 
 /*----Relacionals---*/
-EQUAL       : '==' ;
+EQU         : '==' ;
 NEQ         : '!=' ;
 LET         : '<';
 LEQ         : '<=';
@@ -84,6 +90,10 @@ WHILE       : 'while' ;
 
 BEGINBLOCK  : '|:' ;
 ENDBLOCK    : ':|' ;
+
+ADDLIST     : '<<' ;
+CUTLIST     : '8<' ;
+LEN         : '#'  ;
 
 /*-----Funcions-----*/
 MAIN        : 'Main';
