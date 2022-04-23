@@ -13,7 +13,7 @@ grammar jsbach;
 //////////////////////////////////////////////////
 
 // A program is a list of functions beginning with a main
-program : main function* EOF
+program : main EOF
         ;
 
 main : MAIN BEGINBLOCK statements ENDBLOCK
@@ -37,7 +37,7 @@ statement
            | WHILE expr BEGINBLOCK statements ENDBLOCK                              # whileStmt
            | FUNCID paramexp?                                                       # procCall
            | READ ident                                                             # readStmt
-           | WRITE paramexp                                                         # writeStmt
+           | WRITE (expr)+                                                          # writeStmt
            | PLAY  expr                                                             # playStmt
            | ident ADDLIST expr                                                     # addToListStmt
            | CUTLIST ident '[' expr ']'                                             # cutFromListStmt
@@ -46,11 +46,13 @@ statement
 left_expr  : ident
            ;
 
-expr : op=(PLUS|MINUS) expr                                         # arithmetic
+expr : '(' expr ')'                                                 # parenthesis
+     | op=(PLUS|MINUS) expr                                         # unary
      | expr op=(MUL|DIV|MOD) expr                                   # arithmetic
      | expr op=(PLUS|MINUS) expr                                    # arithmetic
-     | expr op=(EQU|NEQ|LET|LEQ|GET|GEQ)                            # relational
+     | expr op=(EQU|NEQ|LET|LEQ|GET|GEQ) expr                       # relational
      | LEN ident                                                    # lists
+     | INTVAL                                                       # value
      | ident                                                        # exprIdent
      ;
         
@@ -102,6 +104,7 @@ FUNCID      : ('A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;             // Funct
 /*-----Tipus basics-----*/
 VARID       : ('a'..'z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')* ;
 ID          : ('a'..'z' | 'A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')* ;
+INTVAL      : ('0'..'9')+ ;
 
 COMMENT     : '~~~' ~('\n' | '\r')* '\r'? '\n' -> skip ;
 
