@@ -1,7 +1,8 @@
-~~~ Programa que llegeix dos enters i retorna la suma ~~~
+~~~ Programa que llegeix dos enters i retorna la suma i la resta ~~~
 
 Main |:
-	a <- 2
-	b <- 3
-	<!> a
+	<?> a
+	<?> b
+	c <- a+b
+	<!> c a-b
 :|
