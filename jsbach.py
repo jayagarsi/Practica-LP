@@ -81,7 +81,7 @@ class TreeVisitor(jsbachVisitor):
         if op == "MUL":
             return val1 * val2
         elif op == "DIV":
-            return val1 / val2
+            return val1 // val2
         elif op == "MOD":
             return val1 % val2
         elif op == "PLUS":
@@ -132,9 +132,13 @@ class TreeVisitor(jsbachVisitor):
     def visitNotes(self, ctx):
         chd = list(ctx.getChildren())
         note = chd[0].getText()
-        val = note[0]
-        offset = int(note[1])*8          # les notes van de 8 en 8
         notesToValues = {"A" : 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6}
+        if len(note) == 1:      # si no hi ha nombre correspone al 4
+            offset = 4*8
+        else:
+            offset = int(note[1])*8          # les notes van de 8 en 8
+
+        val = note[0]
         return notesToValues[val]+offset
 
     def visitExprIdent(self, ctx):
@@ -155,6 +159,27 @@ class TreeVisitor(jsbachVisitor):
             SymbolTable[id] = 0
         return id
 
+def openLilyPondFile():
+    file_object = open('musica.lily', 'a')
+    file_object.write("\\version \"2.22.1\" \n")
+    file_object.write("\\score {\n")
+    file_object.write("   \\absolute { \n")
+    file_object.write("        \\tempo 4 = 120 \n")
+    file_object.close()
+
+
+def closeLilyPondFile():
+    file_object = open('musica.lily', 'a')
+    file_object.write("   } \n")
+    file_object.write("   \\layout { } \n")
+    file_object.write("   \\midi { } \n")
+    file_object.write("}")
+    file_object.close()
+
+def generatePDFandMidiFiles():
+    file_object = open('musica.lily', 'a')
+    file_object.close()
+
 if len(sys.argv) != 2:
     print("Error: no ha introduit cap fitxer")
 else:
@@ -167,8 +192,13 @@ else:
     #if lexer.getNumberOfSyntaxErrors() > 0 or parser.getNumberOfSyntaxErrors() > 0:
     #    print("Lexical and/or syntactical errors have been found.")
     #else:    
-    tree = parser.program()
+    openLilyPondFile()
 
+    tree = parser.program()
+    
     SymbolTable = {}
     visitor = TreeVisitor(SymbolTable)
     visitor.visit(tree)
+
+    closeLilyPondFile()
+    generatePDFandMidiFiles()

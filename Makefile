@@ -8,3 +8,4 @@ clean:
 	   	   $(grammar)Lexer.interp $(grammar)Lexer.py $(grammar)Lexer.tokens \
 	       $(grammar)Parser.py $(grammar)Visitor.py
 	rm -r __pycache__
+	rm musica.lily
