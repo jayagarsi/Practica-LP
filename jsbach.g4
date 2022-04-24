@@ -22,7 +22,7 @@ main : MAIN BEGINBLOCK statements ENDBLOCK
 function : FUNCID parameters BEGINBLOCK statements ENDBLOCK
          ;
 
-parameters : (ID)*
+parameters : (varident)*
            ;
 
 paramexp   : (expr)+
@@ -31,19 +31,19 @@ paramexp   : (expr)+
 statements : (statement)*
            ;
 
-statement  
-           : left_expr ASSIGN expr                                                  # assignStmt
-           | IF expr BEGINBLOCK statements (ELSE BEGINBLOCK statements ENDBLOCK)?   # ifStmt
-           | WHILE expr BEGINBLOCK statements ENDBLOCK                              # whileStmt
-           | FUNCID paramexp?                                                       # procCall
-           | READ ident                                                             # readStmt
-           | WRITE (expr)+                                                          # writeStmt
-           | PLAY  expr                                                             # playStmt
-           | ident ADDLIST expr                                                     # addToListStmt
-           | CUTLIST ident '[' expr ']'                                             # cutFromListStmt
-           ;
+paramstring : STRING
+            ;
 
-left_expr  : ident
+statement  
+           : VARID ASSIGN expr                                                               # assignStmt
+           | IF expr BEGINBLOCK statements ENDBLOCK (ELSE BEGINBLOCK statements ENDBLOCK)?   # ifStmt
+           | WHILE expr BEGINBLOCK statements ENDBLOCK                                       # whileStmt
+           | funcident paramexp?                                                             # procCall
+           | READ VARID                                                                      # readStmt
+           | WRITE (paramstring|expr|varident)*                                              # writeStmt
+           | PLAY  expr                                                                      # playStmt
+           | varident ADDLIST expr                                                           # addToListStmt
+           | CUTLIST varident '[' expr ']'                                                   # cutFromListStmt
            ;
 
 expr : '(' expr ')'                                                 # parenthesis
@@ -51,13 +51,21 @@ expr : '(' expr ')'                                                 # parenthesi
      | expr op=(MUL|DIV|MOD) expr                                   # arithmetic
      | expr op=(PLUS|MINUS) expr                                    # arithmetic
      | expr op=(EQU|NEQ|LET|LEQ|GET|GEQ) expr                       # relational
-     | LEN ident                                                    # lists
+     | LEN varident                                                 # lists
      | INTVAL                                                       # value
-     | ident                                                        # exprIdent
+     | arraytype                                                    # value
+     | NOTES                                                        # notes
+     | varident                                                     # exprIdent
      ;
+
+arraytype : '{' (INTVAL (',' INTVAL)* )? '}'
+          ;
         
-ident : ID
-      ;
+funcident : FUNCID
+          ;
+
+varident  : VARID
+          ;
 
 /////////////////////////////////////////////////
 /// Lexer Rules
@@ -97,6 +105,10 @@ ADDLIST     : '<<' ;
 CUTLIST     : '8<' ;
 LEN         : '#'  ;
 
+/*-----Notes-----*/
+NOTES       : ('A'..'G') ('0'..'8')? 
+            ;
+
 /*-----Funcions-----*/
 MAIN        : 'Main';
 FUNCID      : ('A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;             // Function IDs start with a capital letter
@@ -105,6 +117,11 @@ FUNCID      : ('A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;             // Funct
 VARID       : ('a'..'z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')* ;
 ID          : ('a'..'z' | 'A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')* ;
 INTVAL      : ('0'..'9')+ ;
+
+STRING    : '"' ( ESC_SEQ | ~('\\'|'"') )* '"' ;
+
+fragment
+ESC_SEQ   : '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\') ;
 
 COMMENT     : '~~~' ~('\n' | '\r')* '\r'? '\n' -> skip ;
 
