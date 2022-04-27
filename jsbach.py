@@ -1,5 +1,5 @@
 import sys
-import re
+import os
 from antlr4 import *
 from jsbachLexer import jsbachLexer
 from jsbachParser import jsbachParser
@@ -8,17 +8,15 @@ from jsbachVisitor import jsbachVisitor
 
 class TreeVisitor(jsbachVisitor):
 
-    def __init__(self, SymbolTable):
+    def __init__(self, SymbolTable, notesString):
         self.SymbolTable = {}
+        self.notesString = ""
 
-    def visitProgram(self, ctx):
-        chd = list(ctx.getChildren())
-        for i in chd:
-            self.visit(i)
+    def getNotesString(self):
+        return self.notesString
 
     def visitMain(self, ctx):
-        chd = list(ctx.getChildren())
-        self.visit(chd[2])
+        self.visit(ctx.statements())
 
     def visitParamstring(self, ctx):
         chd = list(ctx.getChildren())
@@ -28,7 +26,7 @@ class TreeVisitor(jsbachVisitor):
         chd = list(ctx.getChildren())
         id = chd[0].getText()
         exp = self.visit(chd[2])
-        SymbolTable[id] = exp
+        self.SymbolTable[id] = exp
 
     def visitIfStmt(self, ctx):
         chd = list(ctx.getChildren())
@@ -49,7 +47,7 @@ class TreeVisitor(jsbachVisitor):
     def visitReadStmt(self, ctx):
         chd = list(ctx.getChildren())
         id = chd[1].getText()
-        SymbolTable[id] = input()
+        self.SymbolTable[id] = input()
 
     def visitWriteStmt(self, ctx):
         chd = list(ctx.getChildren())
@@ -59,6 +57,7 @@ class TreeVisitor(jsbachVisitor):
 
     def visitPlayStmt(self, ctx):
         chd = list(ctx.getChildren())
+        return self.visit(chd[1])
 
     def visitParenthesis(self, ctx):
         chd = list(ctx.getChildren())
@@ -127,17 +126,36 @@ class TreeVisitor(jsbachVisitor):
 
     def visitValue(self, ctx):
         val = list(ctx.getChildren())
-        return int(val[0].getText())
+        if len(val) > 1:
+            return self.visit(val[0])
+        else:
+            return int(val[0].getText())
     
+    def visitArratype(self, ctx):
+        chd = list(ctx.getChildren())
+        l = []
+        for i in chd:
+            if i != ',' and i != '{' and i != '}':
+                l += self.visit(i)
+        return l
+
     def visitNotes(self, ctx):
         chd = list(ctx.getChildren())
         note = chd[0].getText()
+        snote = ord(str(note[0]))
+        snote = snote + 32
+        snote = chr(snote)
         notesToValues = {"A" : 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6}
         if len(note) == 1:      # si no hi ha nombre correspone al 4
             offset = 4*8
+            snote = snote + "'4"
         else:
             offset = int(note[1])*8          # les notes van de 8 en 8
+            snote = snote + "'" + str(note[1])
 
+        snote = str(snote) + " "
+        self.notesString += snote
+        print(self.notesString)
         val = note[0]
         return notesToValues[val]+offset
 
@@ -148,57 +166,96 @@ class TreeVisitor(jsbachVisitor):
     def visitVarident(self, ctx):
         chd = list(ctx.getChildren())
         id = chd[0].getText()
-        if id not in SymbolTable:
-            SymbolTable[id] = 0
-        return int(SymbolTable[id])
+        if id not in self.SymbolTable:
+            self.SymbolTable[id] = 0
+        return int(self.SymbolTable[id])
 
     def visitFuncident(self, ctx):
         chd = list(ctx.getChildren())
         id = chd[0].getText()
-        if id not in SymbolTable:
-            SymbolTable[id] = 0
+        if id not in self.SymbolTable:
+            self.SymbolTable[id] = 0
         return id
 
-def openLilyPondFile():
-    file_object = open('musica.lily', 'a')
-    file_object.write("\\version \"2.22.1\" \n")
-    file_object.write("\\score {\n")
-    file_object.write("   \\absolute { \n")
-    file_object.write("        \\tempo 4 = 120 \n")
-    file_object.close()
+class FileConverterManager():
+    def __init__(self, fN, notesS):
+        self.fileName = fN
+        self.lilyFileName = self.fileName + ".lily"
+        self.notesString = notesS
 
+    def executeFileCreation(self):
+        self.writeLilyPondFile()
+        self.generatePDFandMidiFiles()
+        self.generateWAVFile()
+        self.generateMP3File()
 
-def closeLilyPondFile():
-    file_object = open('musica.lily', 'a')
-    file_object.write("   } \n")
-    file_object.write("   \\layout { } \n")
-    file_object.write("   \\midi { } \n")
-    file_object.write("}")
-    file_object.close()
+    def writeLilyPondFile(self):
+        file_object = open(self.lilyFileName, 'w')
+        file_object.write("\\version \"2.20.0\" \n")
+        file_object.write("\\score {\n")
+        file_object.write("   \\absolute { \n")
+        file_object.write("        \\tempo 4 = 120 \n")
 
-def generatePDFandMidiFiles():
-    file_object = open('musica.lily', 'a')
-    file_object.close()
+        s = "         " + self.notesString + " \n"
+        file_object.write(s)
 
-if len(sys.argv) != 2:
-    print("Error: no ha introduit cap fitxer")
-else:
-    input_stream = FileStream(sys.argv[1])
+        file_object.write("   } \n")
+        file_object.write("   \\layout { } \n")
+        file_object.write("   \\midi { } \n")
+        file_object.write("}")
+        file_object.close()
 
-    lexer = jsbachLexer(input_stream)
-    token_stream = CommonTokenStream(lexer)
-    parser = jsbachParser(token_stream)
+    def generatePDFandMidiFiles(self):
+        print("----- GENERATING PDF AND MIDI FILES -----")
+        lilyPondInstruction = "lilypond " + self.lilyFileName
+        os.system(lilyPondInstruction)
+        print("----- SUCCESSFULLY GENERATED PDF AND MIDI FILES ----- \n")
 
-    #if lexer.getNumberOfSyntaxErrors() > 0 or parser.getNumberOfSyntaxErrors() > 0:
-    #    print("Lexical and/or syntactical errors have been found.")
-    #else:    
-    openLilyPondFile()
-
-    tree = parser.program()
+    def generateWAVFile(self):
+        print("----- GENERATING WAV FILE -----")
+        wavInstruction = "timidity -Ow -o " + self.fileName + ".wav " + self.fileName + ".midi" 
+        os.system(wavInstruction)
+        print("----- SUCCESSFULLY GENERATED WAV FILE ----- \n")
     
-    SymbolTable = {}
-    visitor = TreeVisitor(SymbolTable)
-    visitor.visit(tree)
+    def generateMP3File(self):
+        mp3FilePath = "./" + self.fileName + ".mp3"
+        if os.path.exists(mp3FilePath):
+            os.remove(mp3FilePath)
+            
+        print("----- GENERATING MP3 FILE -----")
+        wavInstruction = "ffmpeg -i " + self.fileName + ".wav -codec:a libmp3lame -qscale:a 2 " + self.fileName + ".mp3"
+        os.system(wavInstruction)
+        print("----- SUCCESSFULLY GENERATED MP3 FILE -----")
 
-    closeLilyPondFile()
-    generatePDFandMidiFiles()
+def main():
+    if len(sys.argv) != 2:
+        print("Error: no ha introduit cap fitxer")
+    else:
+
+        input_stream = FileStream(sys.argv[1])
+
+        lexer = jsbachLexer(input_stream)
+        token_stream = CommonTokenStream(lexer)
+        parser = jsbachParser(token_stream)
+
+        #if lexer.getNumberOfSyntaxErrors() > 0 or parser.getNumberOfSyntaxErrors() > 0:
+        #    print("Lexical and/or syntactical errors have been found.")
+        #else:    
+
+        tree = parser.program()
+        
+        SymbolTable = {}
+        notesString = ""
+        visitor = TreeVisitor(SymbolTable, notesString)
+        visitor.visit(tree)
+
+        notesString = visitor.getNotesString()
+        if notesString == "":
+            print("Not generating any midi, wav or mp3 file as there is no song to play")
+        else:
+            fileName = 'musica'
+            fileManager = FileConverterManager(fileName, notesString)
+            fileManager.executeFileCreation()
+
+if __name__ == "__main__":
+    main()

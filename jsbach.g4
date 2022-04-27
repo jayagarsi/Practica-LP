@@ -40,8 +40,8 @@ statement
            | WHILE expr BEGINBLOCK statements ENDBLOCK                                       # whileStmt
            | funcident paramexp?                                                             # procCall
            | READ VARID                                                                      # readStmt
-           | WRITE (paramstring|expr|varident)*                                              # writeStmt
-           | PLAY  expr                                                                      # playStmt
+           | WRITE (paramstring|expr)*                                                       # writeStmt
+           | PLAY expr                                                                       # playStmt
            | varident ADDLIST expr                                                           # addToListStmt
            | CUTLIST varident '[' expr ']'                                                   # cutFromListStmt
            ;
@@ -58,9 +58,9 @@ expr : '(' expr ')'                                                 # parenthesi
      | varident                                                     # exprIdent
      ;
 
-arraytype : '{' (INTVAL (',' INTVAL)* )? '}'
+arraytype : '{' ( (NOTES|INTVAL) (',' (NOTES|INTVAL) )* )? '}'
           ;
-        
+
 funcident : FUNCID
           ;
 
