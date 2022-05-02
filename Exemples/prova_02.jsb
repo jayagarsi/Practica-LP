@@ -3,7 +3,7 @@
 Main |:
     <?> a
     if a%2 == 0 |:
-        <!> "P A R E L L"
+        <!> "P A R E L L" a
     :|
     else |:
         while b < 5 |:

@@ -1,9 +1,9 @@
 ~~~ Prova arrays ~~~
 
 Main |:
-  Funcio 5
+  Tremenda 5
 :|
 
-Funcio n |:
+Tremenda n |:
   <!> n
 :|
