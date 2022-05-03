@@ -3,29 +3,37 @@ from jsbachVisitor import jsbachVisitor
 from jsbachLexer import jsbachLexer
 from jsbachParser import jsbachParser
 
+class jsbachExceptions(Exception):
+
+    def __init__(self, message):
+        self.message = "Error: " + message
+
 
 class jsbachFunctionInfo():
 
-    def __init__(self, name, params, context):
+    def __init__(self, name, params, context, index):
         self.name = name
         self.params = params
         self.context = context
+        self.tableindex = index
 
 class TreeVisitor(jsbachVisitor):
 
-    def __init__(self, firstFunctionName="main", firsFunctionParams=[]):
+    def __init__(self, firstFunctionName="Main", firstFunctionParams=[]):
         self.Procedures = {}
         self.SymbolTable = []
         self.notesString = ""
         self.actualScope = 0
+        self.lastScope = 0
         self.firstFunction = firstFunctionName
-        self.firstParams = firsFunctionParams
+        self.firstParams = firstFunctionParams
 
     def getNotesString(self):
         return self.notesString
 
     def visitProcedures(self, ctx):
-        Func = jsbachFunctionInfo("Main", [], ctx.main().statements())
+        Func = jsbachFunctionInfo("Main", [], ctx.main().statements(), self.lastScope)
+        self.lastScope += 1
         self.Procedures["Main"] = Func
         Scope = {}
         self.SymbolTable.append(Scope)
@@ -38,11 +46,11 @@ class TreeVisitor(jsbachVisitor):
                 funcid = proc.FUNCID().getText()
                 Scope = {}
                 self.SymbolTable.append(Scope)
-                self.actualScope += 1
                 params = self.visit(proc.parameters())
-                Func = jsbachFunctionInfo(funcid, params, proc.statements())
+                Func = jsbachFunctionInfo(funcid, params, proc.statements(), self.lastScope)
+                self.lastScope += 1
                 self.Procedures[funcid] = Func
-        self.actualScope -= 1
+
         Func = self.Procedures["Main"]
         self.visit(Func.context)
 
@@ -93,13 +101,32 @@ class TreeVisitor(jsbachVisitor):
             self.visit(ctx.statements())
             expr = self.visit(ctx.expr())
 
+    def visitParamexp(self, ctx):
+        params = []
+        exprs = list(ctx.getChildren())
+        for oneExpr in exprs:
+            e = self.visit(oneExpr)
+            params.append(e)
+        return params
+
     def visitProcCall(self, ctx):
-        params = self.visit(ctx.paramexp())
+        passedParams = self.visit(ctx.paramexp())
         funcid = self.visit(ctx.funcident())
         Func = self.Procedures[funcid]
-        self.actualScope += 1
+        funcParams = Func.params
+
+        if len(passedParams) != len(funcParams):
+            raise jsbachExceptions("Passed params in Main don't match with params in Tremenda")
+
+        previousIndex = self.actualScope
+        self.actualScope = Func.tableindex
+        Scope = self.SymbolTable[self.actualScope]
+        
+        for i in range(len(passedParams)):
+            Scope[funcParams[i]] = passedParams[i]
+
         self.visit(Func.context)
-        self.actualScope -= 1
+        self.actualScope = previousIndex
 
     def visitReadStmt(self, ctx):
         id = ctx.VARID().getText()
@@ -182,17 +209,13 @@ class TreeVisitor(jsbachVisitor):
         return int(ctx.INTVAL().getText())
 
     def visitArray(self, ctx):
-        print("l")
         chd = ctx.getChildren()
         l = list(chd)
-        print(l[0])
-        l = self.visit(ctx.arraytype())
-        return self.visit(ctx.arraytype())
+        return l[0]
 
     def visitArratype(self, ctx):
         chd = list(ctx.getChildren())
         l = []
-        print("l")
         for i in chd:
             if i != ',' and i != '{' and i != '}':
                 l += self.visit(i)
@@ -203,7 +226,7 @@ class TreeVisitor(jsbachVisitor):
         snote = ord(str(note[0]))
         snote = snote + 32
         snote = chr(snote)
-        notesToValues = {"A" : 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6}
+        notesToValues = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6}
         if len(note) == 1:      # si no hi ha nombre correspone al 4
             offset = 4*8
             snote = snote + "'4"
@@ -212,9 +235,7 @@ class TreeVisitor(jsbachVisitor):
             snote = snote + "'" + str(note[1])
         snote = str(snote) + " "
         self.notesString += snote
-        print(self.notesString)
         val = note[0]
-        print(notesToValues[val] + offset)
         return notesToValues[val]+offset
 
     def visitExprIdent(self, ctx):

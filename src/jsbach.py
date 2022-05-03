@@ -2,11 +2,6 @@ import sys
 from CodeAndAudioGenerator import *
 from JSBachVisitor import *
 
-class jsbachExceptions(Exception):
-
-    def __init__(self, message):
-        self.message = "Error: " + message
-
 def main():
     if len(sys.argv) != 2:
         print("Error: no ha introduit cap fitxer")
@@ -26,16 +21,16 @@ def main():
 
         try:
             visitor.visit(tree)
+            notesString = visitor.getNotesString()
+            if notesString == "":
+                print("Not generating any midi, wav or mp3 file as there is no song to play")
+            else:
+                fileName = 'musica'
+                codeGen = CodeAndAudioGenerator(fileName, notesString)
+                codeGen.executeFileCreation()
+
         except jsbachExceptions as e:
             print(e.message)
-
-        notesString = visitor.getNotesString()
-        if notesString == "":
-            print("Not generating any midi, wav or mp3 file as there is no song to play")
-        else:
-            fileName = 'musica'
-            codeGen = CodeAndAudioGenerator(fileName, notesString)
-            codeGen.executeFileCreation()
 
 if __name__ == "__main__":
     main()

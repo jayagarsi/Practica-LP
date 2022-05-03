@@ -66,8 +66,8 @@ expr : '(' expr ')'                                                 # parenthesi
      ;
 
 arraytype : //'{' ( (NOTES|INTVAL) (',' (NOTES|INTVAL) )* )? '}'
-          '{' ( NOTES (',' NOTES )* )? '}'
-         // | '{' ( INTVAL (',' INTVAL )* )? '}'
+            '{' ( NOTES (',' NOTES )* )? '}'
+          | '{' ( INTVAL (',' INTVAL )* )? '}'
           ;
 
 funcident : FUNCID
@@ -82,6 +82,13 @@ varident  : VARID
 
 ASSIGN      : '<-' ;
 
+/*----Aritmetics---*/
+PLUS        : '+' ;
+MINUS       : '-' ;
+MUL         : '*';
+DIV         : '/';
+MOD         : '%';
+
 /*----Relacionals---*/
 EQU         : '==' ;
 NEQ         : '!=' ;
@@ -90,33 +97,27 @@ LEQ         : '<=';
 GET         : '>';
 GEQ         : '>=';
 
-/*----Aritmetics---*/
-PLUS        : '+' ;
-MINUS       : '-' ;
-MUL         : '*';
-DIV         : '/';
-MOD         : '%';
-
 /*---Entrada/Sortida--*/
 WRITE       : '<!>' ;
 READ        : '<?>' ;
-PLAY        : '<:>' ;
 
 /*------Condicional-----*/
 IF          : 'if' ;
 ELSE        : 'else' ;
 WHILE       : 'while' ;
 
+/*------Delimitadors-----*/
 BEGINBLOCK  : '|:' ;
 ENDBLOCK    : ':|' ;
 
+/*------Llistes-----*/
 ADDLIST     : '<<' ;
 CUTLIST     : '8<' ;
 LEN         : '#'  ;
 
 /*-----Notes-----*/
-NOTES       : ('A'..'G') ('0'..'8')? 
-            ;
+PLAY        : '<:>' ;
+NOTES       : ('A'..'G') ('0'..'8')? ;
 
 /*-----Funcions-----*/
 MAIN        : 'Main';
