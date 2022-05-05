@@ -2,5 +2,5 @@
 
 Main |:
     <!> "Hallo Bach"
-    <:> {E, F, G5, F, E, D, C}
+    <:> {E F G F E D C}
 :|
