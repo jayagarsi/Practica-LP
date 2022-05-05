@@ -28,8 +28,11 @@ class TreeVisitor(jsbachVisitor):
         self.firstFunction = firstFunctionName
         self.firstParams = firstFunctionParams
 
+
     def getNotesString(self):
         return self.notesString
+
+    #################### PROCEDURES RULE ####################
 
     def visitProcedures(self, ctx):
         Func = jsbachFunctionInfo("Main", [], ctx.main().statements(), self.lastScope)
@@ -54,12 +57,18 @@ class TreeVisitor(jsbachVisitor):
         Func = self.Procedures["Main"]
         self.visit(Func.context)
 
+    #################### MAIN RULE ####################
+
     def visitMain(self, ctx):
         self.visit(ctx.statements())
+
+    #################### FUNCTION RULE ####################
 
     def visitFunction(self, ctx):
         self.visit(ctx.parameters())
         self.visit(ctx.statements())
+
+    #################### PARAMETERS RULE ####################
 
     def visitParameters(self, ctx):
         params = []
@@ -70,14 +79,21 @@ class TreeVisitor(jsbachVisitor):
             params += [i.getText()]
         return params
 
+    #################### PARAMSTRING RULE ####################
+
+    def visitParamstring(self, ctx):
+        return ctx.STRING().getText()
+
+
+    #################### WRITEPARAMS RULE ####################
+
     def visitWriteparams(self, ctx):
         chd = list(ctx.getChildren())
         for i in chd:
             val = self.visit(i)
             print(val)
 
-    def visitParamstring(self, ctx):
-        return ctx.STRING().getText()
+    #################### STATEMENT RULE ####################
 
     def visitAssignStmt(self, ctx):
         id = ctx.VARID().getText()
@@ -85,6 +101,7 @@ class TreeVisitor(jsbachVisitor):
         Scope = self.SymbolTable[self.actualScope]
         Scope[id] = exp
         self.SymbolTable[self.actualScope] = Scope
+
 
     def visitIfStmt(self, ctx):
         chd = list(ctx.getChildren())
@@ -95,11 +112,13 @@ class TreeVisitor(jsbachVisitor):
             if len(chd) > 5:
                 self.visit(ctx.statements(1))
 
+
     def visitWhileStmt(self, ctx):
         expr = self.visit(ctx.expr())
         while expr:
             self.visit(ctx.statements())
             expr = self.visit(ctx.expr())
+
 
     def visitParamexp(self, ctx):
         params = []
@@ -108,6 +127,7 @@ class TreeVisitor(jsbachVisitor):
             e = self.visit(oneExpr)
             params.append(e)
         return params
+
 
     def visitProcCall(self, ctx):
         passedParams = self.visit(ctx.paramexp())
@@ -121,27 +141,88 @@ class TreeVisitor(jsbachVisitor):
         previousIndex = self.actualScope
         self.actualScope = Func.tableindex
         Scope = self.SymbolTable[self.actualScope]
-        
+
         for i in range(len(passedParams)):
             Scope[funcParams[i]] = passedParams[i]
 
         self.visit(Func.context)
         self.actualScope = previousIndex
 
+
     def visitReadStmt(self, ctx):
         id = ctx.VARID().getText()
         Scope = self.SymbolTable[self.actualScope]
         Scope[id] = input()
 
+
     def visitWriteStmt(self, ctx):
         self.visit(ctx.writeparams())
-        return 0
+
+    def writeOneNote(self, note):
+            val = note%7
+            valuesToNotes = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g"}
+            snote = valuesToNotes[val]
+
+            if note > 29:
+                if note < 37:
+                    snote += "'"
+                elif note < 44:
+                    snote += "''"
+                elif note < 51:
+                    snote += "'''"
+                elif note < 58:
+                    snote += "''''"
+                else:
+                    snote += "'''''"
+            else:
+                if note < 2:
+                    snote += ",,,,"
+                elif note < 9:
+                    snote += ",,,"
+                elif note < 16:
+                    snote += ",,"
+                elif note < 23:
+                    snote += ","
+
+            snote += " "
+            self.notesString += snote
+            if len(self.notesString)%7 == 0:
+                self.notesString += "\n"
+                self.notesString += "         "
 
     def visitPlayStmt(self, ctx):
-        return self.visit(ctx.expr())
+        chd = list(ctx.getChildren())
+        notes = self.visit(chd[1])
+        
+        if isinstance(notes, int):
+            self.writeOneNote(notes)
+        else:
+            for n in notes:
+                self.writeOneNote(n)
+        
+    def visitAddToListStmt(self, ctx):
+        id = ctx.varident().VARID().getText()
+        array = self.visit(ctx.varident())
+        elem = self.visit(ctx.expr())
+        array = array.append(elem)
+        Scope = self.SymbolTable[self.actualScope]
+        Scope[id] = array
+        self.SymbolTable[self.actualScope] = Scope
+
+    def visitCutFromListStmt(self, ctx):
+        id = ctx.varident().VARID().getText()
+        array = self.visit(ctx.varident())
+        offset = self.visit(ctx.expr())
+        del array[offset-1]
+        Scope = self.SymbolTable[self.actualScope]
+        Scope[id] = array
+        self.SymbolTable[self.actualScope] = Scope
+
+    #################### EXPR RULE ####################
 
     def visitParenthesis(self, ctx):
         return self.visit(ctx.expr())
+
 
     def visitUnary(self, ctx):
         op, expr = ctx.getChildren()
@@ -151,6 +232,12 @@ class TreeVisitor(jsbachVisitor):
             return val
         else:
             return -val
+
+    def visitArrayReadAcces(self, ctx):
+        array = self.visit(ctx.varident())
+        offset = self.visit(ctx.expr())
+        return array[offset]
+
 
     def visitArithmetic(self, ctx):
         expr1, op, expr2 = ctx.getChildren()
@@ -167,6 +254,7 @@ class TreeVisitor(jsbachVisitor):
             return val1 + val2
         else:
             return val1 - val2
+
 
     def visitRelational(self, ctx):
         expr1, op, expr2 = ctx.getChildren()
@@ -204,42 +292,55 @@ class TreeVisitor(jsbachVisitor):
             else:
                 return 0
 
+    def visitListsSize(self, ctx):
+        id = self.visit(ctx.varident())
+        return len(id)
+
+    def visitExprArray(self, ctx):
+        return self.visit(ctx.arraytype())
+
+    def visitExprNotes(self, ctx):
+        return self.visit(ctx.notes())
+
     def visitValue(self, ctx):
         val = list(ctx.getChildren())
         return int(ctx.INTVAL().getText())
 
-    def visitArray(self, ctx):
-        chd = ctx.getChildren()
-        l = list(chd)
-        return l[0]
+    def visitExprIdent(self, ctx):
+        return self.visit(ctx.varident())
 
-    def visitArratype(self, ctx):
+    #################### ARRAYTYPE RULE ####################
+
+    def visitArraytype(self, ctx):
         chd = list(ctx.getChildren())
         l = []
         for i in chd:
-            if i != ',' and i != '{' and i != '}':
-                l += self.visit(i)
+            c = i.getText()
+            if c != '{' and c != ',' and c != '}':
+                val = self.visit(i)
+                l.append(val)
         return l
+
+    #################### NOTES RULE ####################
 
     def visitNotes(self, ctx):
         note = ctx.NOTES().getText()
-        snote = ord(str(note[0]))
-        snote = snote + 32
-        snote = chr(snote)
         notesToValues = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6}
-        if len(note) == 1:      # si no hi ha nombre correspone al 4
-            offset = 4*8
-            snote = snote + "'4"
-        else:
-            offset = int(note[1])*8          # les notes van de 8 en 8
-            snote = snote + "'" + str(note[1])
-        snote = str(snote) + " "
-        self.notesString += snote
+        # a,,, b,,, c,, d,, e,, f,, g,, a, b, c, d, e, f, g, a b c d e f g a' b' c' d' e' f' g' a'' b'' c'' d'' e'' f'' g'' a''' b''' c''' d''' e''' f''' g'''
         val = note[0]
+
+        if len(note) == 1:      # si no hi ha nombre correspone al 4
+            offset = 4*7
+        else:
+            if note == "A" or note == "B":
+                offset = int(note[1])*7
+            else:
+                offset = (int(note[1])+1)*7  
+            offset = int(note[1])*7
+
         return notesToValues[val]+offset
 
-    def visitExprIdent(self, ctx):
-        return self.visit(ctx.varident())
+    #################### VARIDENT RULE ####################
 
     def visitVarident(self, ctx):
         id = ctx.VARID().getText()
@@ -247,7 +348,12 @@ class TreeVisitor(jsbachVisitor):
         if id not in Scope:
             Scope[id] = 0
         self.SymbolTable[self.actualScope] = Scope
-        return int(Scope[id])
+        if isinstance(Scope[id], list):
+            return Scope[id]
+        else:
+            return int(Scope[id])
+
+    #################### FUNCIDENT RULE ####################
 
     def visitFuncident(self, ctx):
         funcid = ctx.FUNCID().getText()

@@ -36,15 +36,15 @@ class CodeAndAudioGenerator():
 
     def generateWAVFile(self):
         print("----- GENERATING WAV FILE -----")
-        wavInstruction = "timidity -Ow -o " + self.fileName + ".wav " + self.fileName + ".midi" 
+        wavInstruction = "timidity -Ow -o " + self.fileName + ".wav " + self.fileName + ".midi"
         os.system(wavInstruction)
         print("----- SUCCESSFULLY GENERATED WAV FILE ----- \n")
-    
+
     def generateMP3File(self):
         mp3FilePath = "./" + self.fileName + ".mp3"
         if os.path.exists(mp3FilePath):
             os.remove(mp3FilePath)
-            
+
         print("----- GENERATING MP3 FILE -----")
         wavInstruction = "ffmpeg -i " + self.fileName + ".wav -codec:a libmp3lame -qscale:a 2 " + self.fileName + ".mp3"
         os.system(wavInstruction)

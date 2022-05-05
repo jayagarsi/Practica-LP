@@ -15,8 +15,8 @@ def main():
         tree = parser.program()
         #if lexer.getNumberOfSyntaxErrors() > 0 or parser.getNumberOfSyntaxErrors() > 0:
         #    print("Lexical and/or syntactical errors have been found.")
-        #else:    
-        
+        #else:
+
         visitor = TreeVisitor()
 
         try:
