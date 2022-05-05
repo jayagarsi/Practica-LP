@@ -1,10 +1,30 @@
-//////////////////////////////////////////////////
-//////////////////////////////////////////////////
-//////////////////////////////////////////////////
-////////      Gramatica per jsbach      //////////
-//////////////////////////////////////////////////
-//////////////////////////////////////////////////
-//////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//
+//    Asl - Another simple language (grammar)
+//
+//    Copyright (C) 2017-2022  Universitat Politecnica de Catalunya
+//
+//    This library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU General Public License
+//    as published by the Free Software Foundation; either version 3
+//    of the License, or (at your option) any later version.
+//
+//    This library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Affero General Public License for more details.
+//
+//    You should have received a copy of the GNU Affero General Public
+//    License along with this library; if not, write to the Free Software
+//    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+//
+//    contact: José Miguel Rivero (rivero@cs.upc.edu)
+//             Computer Science Department
+//             Universitat Politecnica de Catalunya
+//             despatx Omega.110 - Campus Nord UPC
+//             08034 Barcelona.  SPAIN
+//
+//////////////////////////////////////////////////////////////////////
 
 grammar jsbach;
 
@@ -28,10 +48,10 @@ function : FUNCID parameters BEGINBLOCK statements ENDBLOCK
 parameters : (varident)*
            ;
 
-paramexp   : (expr)+
+statements : (statement)*
            ;
 
-statements : (statement)*
+paramexp   : (expr)+
            ;
 
 paramstring : STRING
@@ -39,8 +59,8 @@ paramstring : STRING
 
 writeparams : (paramstring|expr)*
             ;
-            
-statement  
+
+statement
            : VARID ASSIGN expr                                                               # assignStmt
            | IF expr BEGINBLOCK statements ENDBLOCK (ELSE BEGINBLOCK statements ENDBLOCK)?   # ifStmt
            | WHILE expr BEGINBLOCK statements ENDBLOCK                                       # whileStmt
@@ -58,17 +78,21 @@ expr : '(' expr ')'                                                 # parenthesi
      | expr op=(MUL|DIV|MOD) expr                                   # arithmetic
      | expr op=(PLUS|MINUS) expr                                    # arithmetic
      | expr op=(EQU|NEQ|LET|LEQ|GET|GEQ) expr                       # relational
-     | LEN varident                                                 # lists
-     | arraytype                                                    # array
+     | LEN varident                                                 # listsSize
+     | arraytype                                                    # exprArray
+     | notes                                                        # exprNotes
      | INTVAL                                                       # value
-     | NOTES                                                        # notes
      | varident                                                     # exprIdent
      ;
 
-arraytype : //'{' ( (NOTES|INTVAL) (',' (NOTES|INTVAL) )* )? '}'
-            '{' ( NOTES (',' NOTES )* )? '}'
-          | '{' ( INTVAL (',' INTVAL )* )? '}'
+arraytype : //
+            '{' (notes)* '}'
+          | '{' (INTVAL)*'}'
           ;
+
+notes : NOTES
+      ;
+
 
 funcident : FUNCID
           ;
@@ -91,7 +115,7 @@ MOD         : '%';
 
 /*----Relacionals---*/
 EQU         : '==' ;
-NEQ         : '!=' ;
+NEQ         : '/=' ;
 LET         : '<';
 LEQ         : '<=';
 GET         : '>';
