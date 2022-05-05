@@ -2,23 +2,29 @@ from antlr4 import *
 from jsbachVisitor import jsbachVisitor
 from jsbachLexer import jsbachLexer
 from jsbachParser import jsbachParser
+from antlr4.error.ErrorListener import ErrorListener
+
+
+class MyErrorListener(ErrorListener):
+    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+        print("Error: there are some syntactical or lexical errors")
+        sys.exit()
+
 
 class jsbachExceptions(Exception):
-
     def __init__(self, message):
         self.message = "Error: " + message
 
 
 class jsbachFunctionInfo():
-
     def __init__(self, name, params, context, index):
         self.name = name
         self.params = params
         self.context = context
         self.tableindex = index
 
-class TreeVisitor(jsbachVisitor):
 
+class TreeVisitor(jsbachVisitor):
     def __init__(self, firstFunctionName="Main", firstFunctionParams=[]):
         self.Procedures = {}
         self.SymbolTable = []
@@ -28,11 +34,10 @@ class TreeVisitor(jsbachVisitor):
         self.firstFunction = firstFunctionName
         self.firstParams = firstFunctionParams
 
-
     def getNotesString(self):
         return self.notesString
 
-    #################### PROCEDURES RULE ####################
+    # ------------------- PROCEDURES RULE ------------------ #
 
     def visitProcedures(self, ctx):
         Func = jsbachFunctionInfo("Main", [], ctx.main().statements(), self.lastScope)
@@ -47,6 +52,9 @@ class TreeVisitor(jsbachVisitor):
                 i += 1
             else:
                 funcid = proc.FUNCID().getText()
+                if funcid in Procedures:
+                    msg = "Already existin function with name "
+                    raise jsbachExceptions(msg, funcid)
                 Scope = {}
                 self.SymbolTable.append(Scope)
                 params = self.visit(proc.parameters())
@@ -57,18 +65,18 @@ class TreeVisitor(jsbachVisitor):
         Func = self.Procedures["Main"]
         self.visit(Func.context)
 
-    #################### MAIN RULE ####################
+    # ------------------- MAIN RULE ------------------ #
 
     def visitMain(self, ctx):
         self.visit(ctx.statements())
 
-    #################### FUNCTION RULE ####################
+    # ------------------- FUNCTION RULE ------------------ #
 
     def visitFunction(self, ctx):
         self.visit(ctx.parameters())
         self.visit(ctx.statements())
 
-    #################### PARAMETERS RULE ####################
+    # ------------------- PARAMETERS RULE ------------------ #
 
     def visitParameters(self, ctx):
         params = []
@@ -79,13 +87,12 @@ class TreeVisitor(jsbachVisitor):
             params += [i.getText()]
         return params
 
-    #################### PARAMSTRING RULE ####################
+    # ------------------- PARAMSTRING RULE ------------------ #
 
     def visitParamstring(self, ctx):
         return ctx.STRING().getText()
 
-
-    #################### WRITEPARAMS RULE ####################
+    # ------------------- WRITEPARAMS RULE ------------------ #
 
     def visitWriteparams(self, ctx):
         chd = list(ctx.getChildren())
@@ -93,7 +100,7 @@ class TreeVisitor(jsbachVisitor):
             val = self.visit(i)
             print(val)
 
-    #################### STATEMENT RULE ####################
+    # ------------------- STATEMENT RULE ------------------ #
 
     def visitAssignStmt(self, ctx):
         id = ctx.VARID().getText()
@@ -101,7 +108,6 @@ class TreeVisitor(jsbachVisitor):
         Scope = self.SymbolTable[self.actualScope]
         Scope[id] = exp
         self.SymbolTable[self.actualScope] = Scope
-
 
     def visitIfStmt(self, ctx):
         chd = list(ctx.getChildren())
@@ -112,13 +118,11 @@ class TreeVisitor(jsbachVisitor):
             if len(chd) > 5:
                 self.visit(ctx.statements(1))
 
-
     def visitWhileStmt(self, ctx):
         expr = self.visit(ctx.expr())
         while expr:
             self.visit(ctx.statements())
             expr = self.visit(ctx.expr())
-
 
     def visitParamexp(self, ctx):
         params = []
@@ -127,7 +131,6 @@ class TreeVisitor(jsbachVisitor):
             e = self.visit(oneExpr)
             params.append(e)
         return params
-
 
     def visitProcCall(self, ctx):
         passedParams = self.visit(ctx.paramexp())
@@ -141,25 +144,21 @@ class TreeVisitor(jsbachVisitor):
         previousIndex = self.actualScope
         self.actualScope = Func.tableindex
         Scope = self.SymbolTable[self.actualScope]
-
         for i in range(len(passedParams)):
             Scope[funcParams[i]] = passedParams[i]
-
         self.visit(Func.context)
         self.actualScope = previousIndex
-
 
     def visitReadStmt(self, ctx):
         id = ctx.VARID().getText()
         Scope = self.SymbolTable[self.actualScope]
         Scope[id] = input()
 
-
     def visitWriteStmt(self, ctx):
         self.visit(ctx.writeparams())
 
     def writeOneNote(self, note):
-            val = note%7
+            val = note % 7
             valuesToNotes = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g"}
             snote = valuesToNotes[val]
 
@@ -186,25 +185,23 @@ class TreeVisitor(jsbachVisitor):
 
             snote += " "
             self.notesString += snote
-            if len(self.notesString)%7 == 0:
+            if len(self.notesString) % 7 == 0:
                 self.notesString += "\n"
                 self.notesString += "         "
 
     def visitPlayStmt(self, ctx):
-        chd = list(ctx.getChildren())
-        notes = self.visit(chd[1])
-        
+        notes = self.visit(ctx.expr())
         if isinstance(notes, int):
             self.writeOneNote(notes)
         else:
             for n in notes:
                 self.writeOneNote(n)
-        
+
     def visitAddToListStmt(self, ctx):
         id = ctx.varident().VARID().getText()
         array = self.visit(ctx.varident())
         elem = self.visit(ctx.expr())
-        array = array.append(elem)
+        array += [elem]
         Scope = self.SymbolTable[self.actualScope]
         Scope[id] = array
         self.SymbolTable[self.actualScope] = Scope
@@ -218,11 +215,10 @@ class TreeVisitor(jsbachVisitor):
         Scope[id] = array
         self.SymbolTable[self.actualScope] = Scope
 
-    #################### EXPR RULE ####################
+    # ------------------- EXPR RULE ------------------ #
 
     def visitParenthesis(self, ctx):
         return self.visit(ctx.expr())
-
 
     def visitUnary(self, ctx):
         op, expr = ctx.getChildren()
@@ -233,11 +229,14 @@ class TreeVisitor(jsbachVisitor):
         else:
             return -val
 
-    def visitArrayReadAcces(self, ctx):
+    def visitArrayReadAccess(self, ctx):
         array = self.visit(ctx.varident())
         offset = self.visit(ctx.expr())
-        return array[offset]
-
+        if not isinstance(offset, int):
+            raise jsbachExceptions("Non integer index in array access")
+        if offset-1 < 0 or offset-1 > len(array):
+            raise jsbachExceptions("Out of bounds access in array")
+        return array[offset-1]
 
     def visitArithmetic(self, ctx):
         expr1, op, expr2 = ctx.getChildren()
@@ -247,14 +246,17 @@ class TreeVisitor(jsbachVisitor):
         if op == "MUL":
             return val1 * val2
         elif op == "DIV":
+            if val2 == 0:
+                raise jsbachExceptions("Attempt to divide by zero")
             return val1 // val2
         elif op == "MOD":
+            if val2 == 0:
+                raise jsbachExceptions("Attempt to divide by zero")
             return val1 % val2
         elif op == "PLUS":
             return val1 + val2
         else:
             return val1 - val2
-
 
     def visitRelational(self, ctx):
         expr1, op, expr2 = ctx.getChildren()
@@ -303,13 +305,12 @@ class TreeVisitor(jsbachVisitor):
         return self.visit(ctx.notes())
 
     def visitValue(self, ctx):
-        val = list(ctx.getChildren())
         return int(ctx.INTVAL().getText())
 
     def visitExprIdent(self, ctx):
         return self.visit(ctx.varident())
 
-    #################### ARRAYTYPE RULE ####################
+    # ------------------- ARRAYTYPE RULE ------------------#
 
     def visitArraytype(self, ctx):
         chd = list(ctx.getChildren())
@@ -321,12 +322,11 @@ class TreeVisitor(jsbachVisitor):
                 l.append(val)
         return l
 
-    #################### NOTES RULE ####################
+    # ------------------- NOTES RULE ------------------ #
 
     def visitNotes(self, ctx):
         note = ctx.NOTES().getText()
         notesToValues = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6}
-        # a,,, b,,, c,, d,, e,, f,, g,, a, b, c, d, e, f, g, a b c d e f g a' b' c' d' e' f' g' a'' b'' c'' d'' e'' f'' g'' a''' b''' c''' d''' e''' f''' g'''
         val = note[0]
 
         if len(note) == 1:      # si no hi ha nombre correspone al 4
@@ -335,12 +335,12 @@ class TreeVisitor(jsbachVisitor):
             if note == "A" or note == "B":
                 offset = int(note[1])*7
             else:
-                offset = (int(note[1])+1)*7  
+                offset = (int(note[1])+1)*7
             offset = int(note[1])*7
 
         return notesToValues[val]+offset
 
-    #################### VARIDENT RULE ####################
+    # ------------------- VARIDENT RULE ------------------ #
 
     def visitVarident(self, ctx):
         id = ctx.VARID().getText()
@@ -353,8 +353,10 @@ class TreeVisitor(jsbachVisitor):
         else:
             return int(Scope[id])
 
-    #################### FUNCIDENT RULE ####################
+    # ------------------- FUNCIDENT RULE ------------------#
 
     def visitFuncident(self, ctx):
         funcid = ctx.FUNCID().getText()
+        if funcid not in Procedures:
+            raise jsbachExceptions("Call to non existing function")
         return funcid

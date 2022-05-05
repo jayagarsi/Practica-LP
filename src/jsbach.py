@@ -2,6 +2,7 @@ import sys
 from CodeAndAudioGenerator import *
 from JSBachVisitor import *
 
+
 def main():
     if len(sys.argv) != 2:
         print("Error: no ha introduit cap fitxer")
@@ -12,11 +13,9 @@ def main():
         lexer = jsbachLexer(input_stream)
         token_stream = CommonTokenStream(lexer)
         parser = jsbachParser(token_stream)
-        tree = parser.program()
-        #if lexer.getNumberOfSyntaxErrors() > 0 or parser.getNumberOfSyntaxErrors() > 0:
-        #    print("Lexical and/or syntactical errors have been found.")
-        #else:
+        parser.addErrorListener(MyErrorListener())
 
+        tree = parser.program()
         visitor = TreeVisitor()
 
         try:
