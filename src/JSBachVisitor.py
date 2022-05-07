@@ -1,3 +1,4 @@
+import sys
 from antlr4 import *
 from jsbachVisitor import jsbachVisitor
 from jsbachLexer import jsbachLexer
@@ -25,7 +26,7 @@ class jsbachFunctionInfo():
 
 
 class TreeVisitor(jsbachVisitor):
-    def __init__(self, firstFunctionName="Main", firstFunctionParams=[]):
+    def __init__(self, firstFunctionName="", firstFunctionParams=[]):
         self.Procedures = {}
         self.SymbolTable = []
         self.notesString = ""
@@ -40,35 +41,46 @@ class TreeVisitor(jsbachVisitor):
     # ------------------- PROCEDURES RULE ------------------ #
 
     def visitProcedures(self, ctx):
-        Func = jsbachFunctionInfo("Main", [], ctx.main().statements(), self.lastScope)
-        self.lastScope += 1
-        self.Procedures["Main"] = Func
-        Scope = {}
-        self.SymbolTable.append(Scope)
+#        Func = jsbachFunctionInfo("Main", [], ctx.main().statements(), self.lastScope)
         chd = list(ctx.getChildren())
-        i = 0
         for proc in chd:
-            if i == 0:
-                i += 1
+            funcid = proc.FUNCID().getText()
+            if funcid in self.Procedures:
+                msg = "Already existin function with name "
+                raise jsbachExceptions(msg, funcid)
+            Scope = {}
+            self.SymbolTable.append(Scope)
+            params = self.visit(proc.parameters())
+            Func = jsbachFunctionInfo(funcid, params, proc.statements(), self.lastScope)
+            self.lastScope += 1
+            self.Procedures[funcid] = Func
+        
+        if self.firstFunction != "":
+            if self.firstFunction not in self.Procedures:
+                if "Main" not in self.Procedures:
+                    msg = "Trying to execute a non existing procedure named " 
+                    msg.append(self.firstFunction)
+                    msg.append(" in a program without Main")
+                    raise jsbachExceptions(msg)
+                else:
+                    Func = self.Procedures["Main"]
             else:
-                funcid = proc.FUNCID().getText()
-                if funcid in Procedures:
-                    msg = "Already existin function with name "
-                    raise jsbachExceptions(msg, funcid)
-                Scope = {}
-                self.SymbolTable.append(Scope)
-                params = self.visit(proc.parameters())
-                Func = jsbachFunctionInfo(funcid, params, proc.statements(), self.lastScope)
-                self.lastScope += 1
-                self.Procedures[funcid] = Func
+                Func = self.Procedures[self.firstFunction]
+        else:
+            if "Main" not in self.Procedures:
+                raise jsbachExceptions("Trying to execute a program without a Main procedure")
+            else:
+                Func = self.Procedures["Main"]
+        
+        self.actualScope = Func.tableindex
+        Scope = self.SymbolTable[self.actualScope]
 
-        Func = self.Procedures["Main"]
+        if len(Func.params) != len(self.firstParams):
+            raise jsbachExceptions("Passed params in Main don't match with params in Tremenda")
+
+        for i in range(len(self.firstParams)):
+            Scope[Func.params[i]] = self.firstParams[i]
         self.visit(Func.context)
-
-    # ------------------- MAIN RULE ------------------ #
-
-    def visitMain(self, ctx):
-        self.visit(ctx.statements())
 
     # ------------------- FUNCTION RULE ------------------ #
 
@@ -357,6 +369,6 @@ class TreeVisitor(jsbachVisitor):
 
     def visitFuncident(self, ctx):
         funcid = ctx.FUNCID().getText()
-        if funcid not in Procedures:
+        if funcid not in self.Procedures:
             raise jsbachExceptions("Call to non existing function")
         return funcid

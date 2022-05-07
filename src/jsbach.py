@@ -4,9 +4,20 @@ from JSBachVisitor import *
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Error: no ha introduit cap fitxer")
+    if len(sys.argv) < 1:
+        print("Error: no file has been introduced")
     else:
+        firstFunctionName = "Main"
+        firstFunctionParams = []
+        if len(sys.argv) == 3:
+            firstFunctionName = sys.argv[2]
+            firstFunctionParams = []
+        elif len(sys.argv) >= 4:
+            firstFunctionName = sys.argv[2]
+            firstFunctionParams = sys.argv[3:]
+
+        for i in range(len(firstFunctionParams)):
+            firstFunctionParams[i] = int(firstFunctionParams[i])
 
         input_stream = FileStream(sys.argv[1])
 
@@ -16,7 +27,7 @@ def main():
         parser.addErrorListener(MyErrorListener())
 
         tree = parser.program()
-        visitor = TreeVisitor()
+        visitor = TreeVisitor(firstFunctionName, firstFunctionParams)
 
         try:
             visitor.visit(tree)
