@@ -36,11 +36,8 @@ grammar jsbach;
 program : procedures EOF
         ;
 
-procedures : main (function)*
+procedures : (function)+
            ;
-
-main : MAIN BEGINBLOCK statements ENDBLOCK
-     ;
 
 function : FUNCID parameters BEGINBLOCK statements ENDBLOCK
          ;
@@ -144,7 +141,7 @@ PLAY        : '<:>' ;
 NOTES       : ('A'..'G') ('0'..'8')? ;
 
 /*-----Funcions-----*/
-MAIN        : 'Main';
+//MAIN        : 'Main';
 FUNCID      : ('A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;             // Function IDs start with a capital letter
 
 /*-----Tipus basics-----*/
