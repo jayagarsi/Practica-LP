@@ -154,6 +154,6 @@ STRING    : '"' ( ESC_SEQ | ~('\\'|'"') )* '"' ;
 fragment
 ESC_SEQ   : '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\') ;
 
-COMMENT     : '~~~' ~('\n' | '\r')* '\r'? '\n' -> skip ;
+COMMENT     : '~~~' ~('\n' | '\r')* '\r'? '~~~' '\n' -> skip ;
 
 WS          : (' ' | '\t' | '\r' | '\n')+ -> skip ;

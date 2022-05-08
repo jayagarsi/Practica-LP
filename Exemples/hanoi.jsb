@@ -16,4 +16,5 @@ HanoiRec n src dst aux |:
         <:> note
         HanoiRec (n - 1) aux dst src
     :|
+    ~~~<!> "Cas base" n ~~~ 
 :|

@@ -159,7 +159,9 @@ class TreeVisitor(jsbachVisitor):
         for i in range(len(passedParams)):
             Scope[funcParams[i]] = passedParams[i]
         self.visit(Func.context)
+        #print(self.actualScope)
         self.actualScope = previousIndex
+        #print(self.actualScope)
 
     def visitReadStmt(self, ctx):
         id = ctx.VARID().getText()
