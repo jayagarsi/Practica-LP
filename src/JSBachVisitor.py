@@ -71,7 +71,7 @@ class TreeVisitor(jsbachVisitor):
         funcParams = self.visit(Func.params)
 
         if len(funcParams) != len(self.firstParams):
-            msg = "Passed parameters in Main don't match with parameters in "
+            msg = "Passed parameters don't match with parameters in "
             msg += Func.name
             raise jsbachExceptions(msg)
         
@@ -153,7 +153,11 @@ class TreeVisitor(jsbachVisitor):
         funcParams = self.visit(Func.params)
 
         if len(passedParams) != len(funcParams):
-            raise jsbachExceptions("Passed params in Main don't match with params in Tremenda")
+            msg = "Passed params in "
+            msg += "NOSE ???"
+            msg += " don't match with params in "
+            msg += Func.name
+            raise jsbachExceptions(msg)
 
         for i in range(len(passedParams)):
             Scope[funcParams[i]] = passedParams[i]
@@ -223,6 +227,9 @@ class TreeVisitor(jsbachVisitor):
         id = ctx.varident().VARID().getText()
         array = self.visit(ctx.varident())
         offset = self.visit(ctx.expr())
+        if offset-1 < 1 or offset-1 > len(array):
+            msg = "Out of bounds acces in array " + id
+            raise jsbachExceptions(msg)
         del array[offset-1]
         Scope = self.SymbolTable[self.actualScope]
         Scope[id] = array
