@@ -36,10 +36,10 @@ grammar jsbach;
 program : procedures EOF
         ;
 
-procedures : (function)+
+procedures : (procedure)+
            ;
 
-function : FUNCID parameters BEGINBLOCK statements ENDBLOCK
+procedure : PROCID parameters BEGINBLOCK statements ENDBLOCK
          ;
 
 parameters : (varident)*
@@ -61,7 +61,7 @@ statement
            : VARID ASSIGN expr                                                               # assignStmt
            | IF expr BEGINBLOCK statements ENDBLOCK (ELSE BEGINBLOCK statements ENDBLOCK)?   # ifStmt
            | WHILE expr BEGINBLOCK statements ENDBLOCK                                       # whileStmt
-           | funcident paramexp?                                                             # procCall
+           | procident paramexp?                                                             # procCall
            | READ VARID                                                                      # readStmt
            | WRITE writeparams                                                               # writeStmt
            | PLAY expr                                                                       # playStmt
@@ -91,7 +91,7 @@ notes : NOTES
       ;
 
 
-funcident : FUNCID
+procident : PROCID
           ;
 
 varident  : VARID
@@ -141,8 +141,7 @@ PLAY        : '<:>' ;
 NOTES       : ('A'..'G') ('0'..'8')? ;
 
 /*-----Funcions-----*/
-//MAIN        : 'Main';
-FUNCID      : ('A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;             // Function IDs start with a capital letter
+PROCID      : ('A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;             // Function IDs start with a capital letter
 
 /*-----Tipus basics-----*/
 VARID       : ('a'..'z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')* ;
@@ -154,6 +153,6 @@ STRING    : '"' ( ESC_SEQ | ~('\\'|'"') )* '"' ;
 fragment
 ESC_SEQ   : '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\') ;
 
-COMMENT     : '~~~' ~('\n' | '\r')* '\r'? '~~~' '\n' -> skip ;
+COMMENT     : '~~~' ~('\n' | '\r')* '\r'? '\n' -> skip ;
 
 WS          : (' ' | '\t' | '\r' | '\n')+ -> skip ;
