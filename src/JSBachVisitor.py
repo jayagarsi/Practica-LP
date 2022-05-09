@@ -18,11 +18,10 @@ class jsbachExceptions(Exception):
 
 
 class jsbachFunctionInfo():
-    def __init__(self, name, params, context, index):
+    def __init__(self, name, params, context):
         self.name = name
         self.params = params
         self.context = context
-        self.tableindex = index
 
 
 class TreeVisitor(jsbachVisitor):
@@ -31,7 +30,6 @@ class TreeVisitor(jsbachVisitor):
         self.SymbolTable = []
         self.notesString = ""
         self.actualScope = 0
-        self.lastScope = 0
         self.firstFunction = firstFunctionName
         self.firstParams = firstFunctionParams
 
@@ -41,26 +39,21 @@ class TreeVisitor(jsbachVisitor):
     # ------------------- PROCEDURES RULE ------------------ #
 
     def visitProcedures(self, ctx):
-#        Func = jsbachFunctionInfo("Main", [], ctx.main().statements(), self.lastScope)
         chd = list(ctx.getChildren())
         for proc in chd:
-            funcid = proc.FUNCID().getText()
-            if funcid in self.Procedures:
+            procid = proc.PROCID().getText()
+            if procid in self.Procedures:
                 msg = "Already existin function with name "
-                raise jsbachExceptions(msg, funcid)
-            Scope = {}
-            self.SymbolTable.append(Scope)
-            params = self.visit(proc.parameters())
-            Func = jsbachFunctionInfo(funcid, params, proc.statements(), self.lastScope)
-            self.lastScope += 1
-            self.Procedures[funcid] = Func
+                raise jsbachExceptions(msg, procid)
+            Func = jsbachFunctionInfo(procid, proc.parameters(), proc.statements())
+            self.Procedures[procid] = Func
         
         if self.firstFunction != "":
             if self.firstFunction not in self.Procedures:
                 if "Main" not in self.Procedures:
                     msg = "Trying to execute a non existing procedure named " 
-                    msg.append(self.firstFunction)
-                    msg.append(" in a program without Main")
+                    msg += self.firstFunction
+                    msg += " in a program without Main"
                     raise jsbachExceptions(msg)
                 else:
                     Func = self.Procedures["Main"]
@@ -72,19 +65,24 @@ class TreeVisitor(jsbachVisitor):
             else:
                 Func = self.Procedures["Main"]
         
-        self.actualScope = Func.tableindex
-        Scope = self.SymbolTable[self.actualScope]
 
-        if len(Func.params) != len(self.firstParams):
-            raise jsbachExceptions("Passed params in Main don't match with params in Tremenda")
+        Scope = {}
+        self.SymbolTable.append(Scope)
+        funcParams = self.visit(Func.params)
 
+        if len(funcParams) != len(self.firstParams):
+            msg = "Passed parameters in Main don't match with parameters in "
+            msg += Func.name
+            raise jsbachExceptions(msg)
+        
         for i in range(len(self.firstParams)):
-            Scope[Func.params[i]] = self.firstParams[i]
+            Scope[funcParams[i]] = self.firstParams[i]
         self.visit(Func.context)
+        self.SymbolTable.pop()
 
     # ------------------- FUNCTION RULE ------------------ #
 
-    def visitFunction(self, ctx):
+    def visitProcedure(self, ctx):
         self.visit(ctx.parameters())
         self.visit(ctx.statements())
 
@@ -146,22 +144,23 @@ class TreeVisitor(jsbachVisitor):
 
     def visitProcCall(self, ctx):
         passedParams = self.visit(ctx.paramexp())
-        funcid = self.visit(ctx.funcident())
-        Func = self.Procedures[funcid]
-        funcParams = Func.params
+        procid = self.visit(ctx.procident())
+        Func = self.Procedures[procid]
+        
+        Scope = {}
+        self.actualScope += 1
+        self.SymbolTable.append(Scope)
+        funcParams = self.visit(Func.params)
 
         if len(passedParams) != len(funcParams):
             raise jsbachExceptions("Passed params in Main don't match with params in Tremenda")
 
-        previousIndex = self.actualScope
-        self.actualScope = Func.tableindex
-        Scope = self.SymbolTable[self.actualScope]
         for i in range(len(passedParams)):
             Scope[funcParams[i]] = passedParams[i]
+        
         self.visit(Func.context)
-        #print(self.actualScope)
-        self.actualScope = previousIndex
-        #print(self.actualScope)
+        self.SymbolTable.pop()
+        self.actualScope -= 1
 
     def visitReadStmt(self, ctx):
         id = ctx.VARID().getText()
@@ -367,10 +366,10 @@ class TreeVisitor(jsbachVisitor):
         else:
             return int(Scope[id])
 
-    # ------------------- FUNCIDENT RULE ------------------#
+    # ------------------- PROCIDENT RULE ------------------#
 
-    def visitFuncident(self, ctx):
-        funcid = ctx.FUNCID().getText()
-        if funcid not in self.Procedures:
+    def visitProcident(self, ctx):
+        procid = ctx.PROCID().getText()
+        if procid not in self.Procedures:
             raise jsbachExceptions("Call to non existing function")
-        return funcid
+        return procid
