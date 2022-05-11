@@ -1,6 +1,6 @@
 # Doble Intèrpret pel llenguatge musical JSBach
 
-Pràctica de LP del curs 2021-2022 Q2 on s'implementa un doble intèrpret pel llenguatge de programació JSBach. La definició del llenguatge es troba en el directori [Enunciat](https://github.com/jayagarsi/Practica-LP/Enunciat). La doble interpretació ve de que primer s'interpreta el llenguatge JSBach i després es genera codi en llenguatge [lillypond](https://lilypond.org/). Aquest README està pensat per explicar com s'ha implementat l'intèrpret i entendre millor.
+Pràctica de LP del curs 2021-2022 Q2 on s'implementa un doble intèrpret pel llenguatge de programació JSBach. La definició del llenguatge es troba en el directori [Enunciat](https://github.com/jayagarsi/Practica-LP/tree/master/Enunciat). La doble interpretació ve de que primer s'interpreta el llenguatge JSBach i després es genera codi en llenguatge [lillypond](https://lilypond.org/). Aquest README està pensat per explicar com s'ha implementat l'intèrpret i entendre millor.
 
 ## Gramàtica de JSBach
 
