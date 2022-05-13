@@ -1,31 +1,3 @@
-//////////////////////////////////////////////////////////////////////
-//
-//    Asl - Another simple language (grammar)
-//
-//    Copyright (C) 2017-2022  Universitat Politecnica de Catalunya
-//
-//    This library is free software; you can redistribute it and/or
-//    modify it under the terms of the GNU General Public License
-//    as published by the Free Software Foundation; either version 3
-//    of the License, or (at your option) any later version.
-//
-//    This library is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//    Affero General Public License for more details.
-//
-//    You should have received a copy of the GNU Affero General Public
-//    License along with this library; if not, write to the Free Software
-//    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-//
-//    contact: José Miguel Rivero (rivero@cs.upc.edu)
-//             Computer Science Department
-//             Universitat Politecnica de Catalunya
-//             despatx Omega.110 - Campus Nord UPC
-//             08034 Barcelona.  SPAIN
-//
-//////////////////////////////////////////////////////////////////////
-
 grammar jsbach;
 
 //////////////////////////////////////////////////
@@ -71,14 +43,16 @@ statement
 
 expr : '(' expr ')'                                                 # parenthesis
      | varident '[' expr ']'                                        # arrayReadAccess
-     | op=(PLUS|MINUS) expr                                         # unary
+     | op=(NOT|PLUS|MINUS) expr                                     # unary
      | expr op=(MUL|DIV|MOD) expr                                   # arithmetic
      | expr op=(PLUS|MINUS) expr                                    # arithmetic
      | expr op=(EQU|NEQ|LET|LEQ|GET|GEQ) expr                       # relational
      | LEN varident                                                 # listsSize
+     | expr op=AND expr                                             # boolean
+     | expr op=OR  expr                                             # boolean
      | arraytype                                                    # exprArray
      | notes                                                        # exprNotes
-     | INTVAL                                                       # value
+     | (INTVAL|BOOLVAL)                                             # value
      | varident                                                     # exprIdent
      ;
 
@@ -89,7 +63,6 @@ arraytype : //
 
 notes : NOTES
       ;
-
 
 procident : PROCID
           ;
@@ -118,6 +91,11 @@ LEQ         : '<=';
 GET         : '>';
 GEQ         : '>=';
 
+/*----Logics---*/
+NOT         : 'not' ;
+AND         : 'and' ;
+OR          : 'or'  ;
+
 /*---Entrada/Sortida--*/
 WRITE       : '<!>' ;
 READ        : '<?>' ;
@@ -138,14 +116,14 @@ LEN         : '#'  ;
 
 /*-----Notes-----*/
 PLAY        : '<:>' ;
-NOTES       : ('A'..'G') ('0'..'8')? ;
+NOTES       : ('A'..'G') ('0'..'8')? ('#'|'b')? ;
 
 /*-----Funcions-----*/
 PROCID      : ('A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;             // Function IDs start with a capital letter
 
 /*-----Tipus basics-----*/
+BOOLVAL     : 'true' | 'false' ;
 VARID       : ('a'..'z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')* ;
-ID          : ('a'..'z' | 'A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')* ;
 INTVAL      : ('0'..'9')+ ;
 
 STRING    : '"' ( ESC_SEQ | ~('\\'|'"') )* '"' ;
@@ -153,6 +131,6 @@ STRING    : '"' ( ESC_SEQ | ~('\\'|'"') )* '"' ;
 fragment
 ESC_SEQ   : '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\') ;
 
-COMMENT     : '~~~' ~('\n' | '\r')* '\r'? '\n' -> skip ;
+COMMENT     : '~~~' ~('\n' | '\r')* '~~~' -> skip ;
 
 WS          : (' ' | '\t' | '\r' | '\n')+ -> skip ;

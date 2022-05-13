@@ -6,11 +6,10 @@ from jsbachParser import jsbachParser
 from antlr4.error.ErrorListener import ErrorListener
 
 
-class MyErrorListener(ErrorListener):
+class jsbachErrorListener(ErrorListener):
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
         print("Error: there are some syntactical or lexical errors")
         sys.exit()
-
 
 class jsbachExceptions(Exception):
     def __init__(self, message):
@@ -44,14 +43,15 @@ class TreeVisitor(jsbachVisitor):
             procid = proc.PROCID().getText()
             if procid in self.Procedures:
                 msg = "Already existin function with name "
-                raise jsbachExceptions(msg, procid)
+                msg += procid
+                raise jsbachExceptions(msg)
             Func = jsbachFunctionInfo(procid, proc.parameters(), proc.statements())
             self.Procedures[procid] = Func
-        
+
         if self.firstFunction != "":
             if self.firstFunction not in self.Procedures:
                 if "Main" not in self.Procedures:
-                    msg = "Trying to execute a non existing procedure named " 
+                    msg = "Trying to execute a non existing procedure named "
                     msg += self.firstFunction
                     msg += " in a program without Main"
                     raise jsbachExceptions(msg)
@@ -64,7 +64,7 @@ class TreeVisitor(jsbachVisitor):
                 raise jsbachExceptions("Trying to execute a program without a Main procedure")
             else:
                 Func = self.Procedures["Main"]
-        
+
 
         Scope = {}
         self.SymbolTable.append(Scope)
@@ -74,7 +74,7 @@ class TreeVisitor(jsbachVisitor):
             msg = "Passed parameters don't match with parameters in "
             msg += Func.name
             raise jsbachExceptions(msg)
-        
+
         for i in range(len(self.firstParams)):
             Scope[funcParams[i]] = self.firstParams[i]
         self.visit(Func.context)
@@ -146,22 +146,20 @@ class TreeVisitor(jsbachVisitor):
         passedParams = self.visit(ctx.paramexp())
         procid = self.visit(ctx.procident())
         Func = self.Procedures[procid]
-        
+
         Scope = {}
         self.actualScope += 1
         self.SymbolTable.append(Scope)
         funcParams = self.visit(Func.params)
 
         if len(passedParams) != len(funcParams):
-            msg = "Passed params in "
-            msg += "NOSE ???"
-            msg += " don't match with params in "
+            msg = "Passed params in calling function don't match with params in "
             msg += Func.name
             raise jsbachExceptions(msg)
 
         for i in range(len(passedParams)):
             Scope[funcParams[i]] = passedParams[i]
-        
+
         self.visit(Func.context)
         self.SymbolTable.pop()
         self.actualScope -= 1
@@ -178,6 +176,16 @@ class TreeVisitor(jsbachVisitor):
             val = note % 7
             valuesToNotes = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g"}
             snote = valuesToNotes[val]
+
+            # Tenim un bemol en la nota
+            if note >= 59*2:
+                note -= 59*2
+                snote += 'es'
+
+            # Tenim un sostingut en la nota
+            elif note >= 59:
+                note -= 59
+                snote += 'is'
 
             if note > 29:
                 if note < 37:
@@ -227,7 +235,7 @@ class TreeVisitor(jsbachVisitor):
         id = ctx.varident().VARID().getText()
         array = self.visit(ctx.varident())
         offset = self.visit(ctx.expr())
-        if offset-1 < 1 or offset-1 > len(array):
+        if offset-1 < 0 or offset-1 >= len(array):
             msg = "Out of bounds acces in array " + id
             raise jsbachExceptions(msg)
         del array[offset-1]
@@ -246,8 +254,10 @@ class TreeVisitor(jsbachVisitor):
         val = self.visit(expr)
         if op == "PLUS":
             return val
-        else:
+        elif op == "MINUS":
             return -val
+        else:
+            return not val
 
     def visitArrayReadAccess(self, ctx):
         array = self.visit(ctx.varident())
@@ -255,7 +265,10 @@ class TreeVisitor(jsbachVisitor):
         if not isinstance(offset, int):
             raise jsbachExceptions("Non integer index in array access")
         if offset-1 < 0 or offset-1 > len(array):
-            raise jsbachExceptions("Out of bounds access in array")
+            arrayId = ctx.varident().VARID().getText();
+            msg = "Out of bounds access in array"
+            msg += arrayId
+            raise jsbachExceptions(msg)
         return array[offset-1]
 
     def visitArithmetic(self, ctx):
@@ -284,39 +297,32 @@ class TreeVisitor(jsbachVisitor):
         val1 = self.visit(expr1)
         val2 = self.visit(expr2)
         if op == "EQU":
-            if val1 == val2:
-                return 1
-            else:
-                return 0
+            return val1 == val2
         elif op == "NEQ":
-            if val1 != val2:
-                return 1
-            else:
-                return 0
+            return val1 != val2
         elif op == "LET":
-            if val1 < val2:
-                return 1
-            else:
-                return 0
+            return val1 < val2
         elif op == "LEQ":
-            if val1 <= val2:
-                return 1
-            else:
-                return 0
+            return val1 <= val2
         elif op == "GET":
-            if val1 > val2:
-                return 1
-            else:
-                return 0
+            return val1 > val2
         else:
-            if val1 >= val2:
-                return 1
-            else:
-                return 0
+            return val1 >= val2
 
     def visitListsSize(self, ctx):
         id = self.visit(ctx.varident())
         return len(id)
+
+    def visitBoolean(self, ctx):
+        expr1, op, expr2 = ctx.getChildren()
+        op = jsbachParser.symbolicNames[op.getSymbol().type]
+        val1 = self.visit(expr1)
+        val2 = self.visit(expr2)
+
+        if op == "AND":
+            return val1 and val2
+        else:
+            return val1 or val2
 
     def visitExprArray(self, ctx):
         return self.visit(ctx.arraytype())
@@ -325,7 +331,13 @@ class TreeVisitor(jsbachVisitor):
         return self.visit(ctx.notes())
 
     def visitValue(self, ctx):
-        return int(ctx.INTVAL().getText())
+        chd = list(ctx.getChildren())
+        if chd[0].getText() == 'true':
+            return True
+        elif chd[0].getText() == 'false':
+            return False
+        else:
+            return int(chd[0].getText())
 
     def visitExprIdent(self, ctx):
         return self.visit(ctx.varident())
@@ -348,16 +360,26 @@ class TreeVisitor(jsbachVisitor):
         note = ctx.NOTES().getText()
         notesToValues = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6}
         val = note[0]
-
         if len(note) == 1:      # si no hi ha nombre correspone al 4
             offset = 4*7
-        else:
-            if note == "A" or note == "B":
-                offset = int(note[1])*7
+        elif len(note) == 2:
+            if note[1] == '#':
+                offset = 4*7 + 59
+            elif note[1] == 'b':
+                offset = 4*7 + 59*2
             else:
-                offset = (int(note[1])+1)*7
+                offset = int(note[1])*7
+        else:
+            
+            #if note == "A" or note == "B":
+            #    offset = int(note[1])*7
+            #else:
+            #    offset = (int(note[1])+1)*7
             offset = int(note[1])*7
-
+            if note[2] == '#':
+                    offset += 59
+            elif note[2] == 'b':
+                offset += 59*2
         return notesToValues[val]+offset
 
     # ------------------- VARIDENT RULE ------------------ #
@@ -378,5 +400,7 @@ class TreeVisitor(jsbachVisitor):
     def visitProcident(self, ctx):
         procid = ctx.PROCID().getText()
         if procid not in self.Procedures:
-            raise jsbachExceptions("Call to non existing function")
+            msg = "Call to non existing function named "
+            msg += procid
+            raise jsbachExceptions(msg)
         return procid

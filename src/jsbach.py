@@ -22,9 +22,10 @@ def main():
         input_stream = FileStream(sys.argv[1])
 
         lexer = jsbachLexer(input_stream)
+        lexer.addErrorListener(jsbachErrorListener())
         token_stream = CommonTokenStream(lexer)
         parser = jsbachParser(token_stream)
-        parser.addErrorListener(MyErrorListener())
+        parser.addErrorListener(jsbachErrorListener())
 
         tree = parser.program()
         visitor = TreeVisitor(firstFunctionName, firstFunctionParams)
