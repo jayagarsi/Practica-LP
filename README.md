@@ -37,3 +37,10 @@ token_stream = CommonTokenStream(lexer)
 parser = jsbachParser(token_stream)
 parser.addErrorListener(MyErrorListener())
 ```
+
+
+## Extensions
+
+### Operacions amb booleans
+
+### Notes sostingudes o bemols
