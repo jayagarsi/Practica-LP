@@ -3,7 +3,7 @@
 Main |:
     a <- A0
     while a <= C8 |:
-        <:> a
+        <!> a
         a <- a +1
     :|
 :|
