@@ -8,12 +8,12 @@ from antlr4.error.ErrorListener import ErrorListener
 
 class jsbachErrorListener(ErrorListener):
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-        print("Error: there are some syntactical or lexical errors")
+        print("ERROR: there are some syntactical or lexical errors")
         sys.exit()
 
 class jsbachExceptions(Exception):
     def __init__(self, message):
-        self.message = "Error: " + message
+        self.message = "ERROR: " + message
 
 
 class jsbachFunctionInfo():
@@ -21,7 +21,6 @@ class jsbachFunctionInfo():
         self.name = name
         self.params = params
         self.context = context
-
 
 class TreeVisitor(jsbachVisitor):
     def __init__(self, firstFunctionName="", firstFunctionParams=[]):
@@ -31,9 +30,17 @@ class TreeVisitor(jsbachVisitor):
         self.actualScope = 0
         self.firstFunction = firstFunctionName
         self.firstParams = firstFunctionParams
+        self.tempo = 120
+        self.key = ""
 
     def getNotesString(self):
         return self.notesString
+
+    def getNotesTempo(self):
+        return self.tempo
+    
+    def getKeySignature(self):
+        return self.key
 
     # ------------------- PROCEDURES RULE ------------------ #
 
@@ -172,55 +179,69 @@ class TreeVisitor(jsbachVisitor):
     def visitWriteStmt(self, ctx):
         self.visit(ctx.writeparams())
 
-    def writeOneNote(self, note):
-            val = note % 7
-            valuesToNotes = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g"}
-            snote = valuesToNotes[val]
+    def decodeNote(self, note):
+        val = note % 7
+        valuesToNotes = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g"}
+        snote = valuesToNotes[val]
 
-            # Tenim un bemol en la nota
-            if note >= 59*2:
-                note -= 59*2
-                snote += 'es'
+        # Tenim un bemol en la nota
+        if note >= 59*2:
+            note -= 59*2
+            snote += 'es'
 
-            # Tenim un sostingut en la nota
-            elif note >= 59:
-                note -= 59
-                snote += 'is'
+        # Tenim un sostingut en la nota
+        elif note >= 59:
+            note -= 59
+            snote += 'is'
 
-            if note > 29:
-                if note < 37:
-                    snote += "'"
-                elif note < 44:
-                    snote += "''"
-                elif note < 51:
-                    snote += "'''"
-                elif note < 58:
-                    snote += "''''"
-                else:
-                    snote += "'''''"
+        if note > 29:
+            if note < 37:
+                snote += "'"
+            elif note < 44:
+                snote += "''"
+            elif note < 51:
+                snote += "'''"
+            elif note < 58:
+                snote += "''''"
             else:
-                if note < 2:
-                    snote += ",,,,"
-                elif note < 9:
-                    snote += ",,,"
-                elif note < 16:
-                    snote += ",,"
-                elif note < 23:
-                    snote += ","
-
+                snote += "'''''"
+        else:
+            if note < 2:
+                snote += ",,,,"
+            elif note < 9:
+                snote += ",,,"
+            elif note < 16:
+                snote += ",,"
+            elif note < 23:
+                snote += ","
             snote += " "
+        return snote
+
+    def playOneNote(self, note):
+        snote = self.decodeNote(note)
+        self.notesString += snote
+        if len(self.notesString) % 7 == 0:
+            self.notesString += "\n"
+            self.notesString += "         "
+
+    def playChord(self, notes):
+        self.notesString += '<'
+        for note in notes:
+            snote = self.decodeNote(note)
+            snote = self.decodeNote(note)
             self.notesString += snote
-            if len(self.notesString) % 7 == 0:
-                self.notesString += "\n"
-                self.notesString += "         "
+        self.notesString += '> '
 
     def visitPlayStmt(self, ctx):
         notes = self.visit(ctx.expr())
         if isinstance(notes, int):
-            self.writeOneNote(notes)
+            self.playOneNote(notes)
         else:
             for n in notes:
-                self.writeOneNote(n)
+                if isinstance(n, list):
+                    self.playChord(n)
+                else:
+                    self.playOneNote(n)
 
     def visitAddToListStmt(self, ctx):
         id = ctx.varident().VARID().getText()
@@ -242,6 +263,14 @@ class TreeVisitor(jsbachVisitor):
         Scope = self.SymbolTable[self.actualScope]
         Scope[id] = array
         self.SymbolTable[self.actualScope] = Scope
+
+    def visitSetTempo(self, ctx):
+        value = ctx.INTVAL().getText()
+        self.tempo = value
+
+    def visitSetKeySignature(self, ctx):
+        keysig = ctx.KEYSIGS().getText()
+        self.key = keysig
 
     # ------------------- EXPR RULE ------------------ #
 
@@ -349,17 +378,17 @@ class TreeVisitor(jsbachVisitor):
         l = []
         for i in chd:
             c = i.getText()
-            if c != '{' and c != ',' and c != '}':
+            if c != '{' and c != '}':
                 val = self.visit(i)
                 l.append(val)
         return l
 
     # ------------------- NOTES RULE ------------------ #
 
-    def visitNotes(self, ctx):
-        note = ctx.NOTES().getText()
+    def codeNote(self, note):
         notesToValues = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6}
         val = note[0]
+        
         if len(note) == 1:      # si no hi ha nombre correspone al 4
             offset = 4*7
         elif len(note) == 2:
@@ -371,16 +400,29 @@ class TreeVisitor(jsbachVisitor):
                 offset = int(note[1])*7
         else:
             
-            #if note == "A" or note == "B":
-            #    offset = int(note[1])*7
-            #else:
-            #    offset = (int(note[1])+1)*7
             offset = int(note[1])*7
             if note[2] == '#':
                     offset += 59
             elif note[2] == 'b':
                 offset += 59*2
         return notesToValues[val]+offset
+
+    def visitNotes(self, ctx):
+        chd = list(ctx.getChildren())
+        if len(chd) == 1:
+            note = ctx.NOTES(0).getText()
+            return self.codeNote(note)
+
+        else:
+            chord = []
+            for i in chd:
+                note = i.getText()
+                if note != '<' and note != '>':
+                    n = self.codeNote(note)
+                    chord.append(n)
+            return chord
+
+
 
     # ------------------- VARIDENT RULE ------------------ #
 

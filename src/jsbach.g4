@@ -39,6 +39,8 @@ statement
            | PLAY expr                                                                       # playStmt
            | varident ADDLIST expr                                                           # addToListStmt
            | CUTLIST varident '[' expr ']'                                                   # cutFromListStmt
+           | KEYSIGNATURE '=' KEYSIGS                                                        # setKeySignature
+           | TEMPO SET INTVAL                                                                # setTempo
            ;
 
 expr : '(' expr ')'                                                 # parenthesis
@@ -56,12 +58,12 @@ expr : '(' expr ')'                                                 # parenthesi
      | varident                                                     # exprIdent
      ;
 
-arraytype : //
-            '{' (notes)* '}'
+arraytype : '{' (notes)* '}'
           | '{' (INTVAL)*'}'
           ;
 
 notes : NOTES
+      | '<' (NOTES)+ '>'
       ;
 
 procident : PROCID
@@ -116,7 +118,11 @@ LEN         : '#'  ;
 
 /*-----Notes-----*/
 PLAY        : '<:>' ;
-NOTES       : ('A'..'G') ('0'..'8')? ('#'|'b')? ;
+SET         : '=' ;
+NOTES       : ('A'..'G') ('0'..'8')? ('#'|'b')? (',' ('1'|'2'|'8'|'16'))? ;
+KEYSIGNATURE: '_ksg_';
+TEMPO       : '_tmp_';
+KEYSIGS     : ('A'..'G') ('major' | 'minor') ;
 
 /*-----Funcions-----*/
 PROCID      : ('A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;             // Function IDs start with a capital letter

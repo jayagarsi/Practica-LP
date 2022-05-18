@@ -2,10 +2,12 @@ import os
 
 
 class CodeAndAudioGenerator():
-    def __init__(self, fN, notesS):
+    def __init__(self, fN, notesS, temp, keyS):
         self.fileName = fN
         self.lilyFileName = self.fileName + ".lily"
         self.notesString = notesS
+        self.tempo = str(temp)
+        self.key = keyS
 
     def executeFileCreation(self):
         self.writeLilyPondFile()
@@ -15,18 +17,17 @@ class CodeAndAudioGenerator():
 
     def writeLilyPondFile(self):
         file_object = open(self.lilyFileName, 'w')
-        file_object.write("\\version \"2.20.0\" \n")
-        file_object.write("\\score {\n")
-        file_object.write("   \\absolute { \n")
-        file_object.write("        \\tempo 4 = 120 \n")
-
-        s = "         " + self.notesString + " \n"
+        s =  "\\version \"2.20.0\" \n"
+        s += "\\score {\n"
+        s += "   \\absolute { \n"
+        s += "        \\tempo 4 = " + self.tempo + "\n"
+        s += "        \\key " + self.key[0] + " \\" + self.key[1:] + "\n"
+        s += "         " + self.notesString + "\n"
+        s += "   } \n"
+        s += "   \\layout { } \n"
+        s += "   \\midi { } \n"
+        s += "}"
         file_object.write(s)
-
-        file_object.write("   } \n")
-        file_object.write("   \\layout { } \n")
-        file_object.write("   \\midi { } \n")
-        file_object.write("}")
         file_object.close()
 
     def generatePDFandMidiFiles(self):

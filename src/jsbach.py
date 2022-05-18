@@ -1,12 +1,14 @@
 import sys
 from CodeAndAudioGenerator import *
-from JSBachVisitor import *
+from MyJSBachVisitor import *
+from itertools import takewhile
 
 
 def main():
     if len(sys.argv) < 1:
-        print("Error: no file has been introduced")
+        print("Usage: python3 jsbach.py program.jsb [functionname] [parameters]")
     else:
+        programName = sys.argv[1]
         firstFunctionName = "Main"
         firstFunctionParams = []
         if len(sys.argv) == 3:
@@ -36,8 +38,14 @@ def main():
             if notesString == "":
                 print("Not generating any midi, wav or mp3 file as there is no song to play")
             else:
-                fileName = 'musica'
-                codeGen = CodeAndAudioGenerator(fileName, notesString)
+                fileName = os.path.basename(programName)
+                n = len(fileName) - 4
+                fileName = fileName[0:n]
+
+                tempo = visitor.getNotesTempo()
+                key = visitor.getKeySignature()
+
+                codeGen = CodeAndAudioGenerator(fileName, notesString, tempo, key)
                 codeGen.executeFileCreation()
 
         except jsbachExceptions as e:
