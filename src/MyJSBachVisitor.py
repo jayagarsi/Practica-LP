@@ -15,7 +15,6 @@ class jsbachExceptions(Exception):
     def __init__(self, message):
         self.message = "ERROR: " + message
 
-
 class jsbachFunctionInfo():
     def __init__(self, name, params, context):
         self.name = name
@@ -38,7 +37,7 @@ class TreeVisitor(jsbachVisitor):
 
     def getNotesTempo(self):
         return self.tempo
-    
+
     def getKeySignature(self):
         return self.key
 
@@ -71,7 +70,6 @@ class TreeVisitor(jsbachVisitor):
                 raise jsbachExceptions("Trying to execute a program without a Main procedure")
             else:
                 Func = self.Procedures["Main"]
-
 
         Scope = {}
         self.SymbolTable.append(Scope)
@@ -150,7 +148,10 @@ class TreeVisitor(jsbachVisitor):
         return params
 
     def visitProcCall(self, ctx):
-        passedParams = self.visit(ctx.paramexp())
+        chd = list(ctx.getChildren())
+        passedParams = []
+        if len(chd) == 2:
+            passedParams = self.visit(ctx.paramexp())
         procid = self.visit(ctx.procident())
         Func = self.Procedures[procid]
 
@@ -164,8 +165,9 @@ class TreeVisitor(jsbachVisitor):
             msg += Func.name
             raise jsbachExceptions(msg)
 
-        for i in range(len(passedParams)):
-            Scope[funcParams[i]] = passedParams[i]
+        if len(chd) == 2:
+            for i in range(len(passedParams)):
+                Scope[funcParams[i]] = passedParams[i]
 
         self.visit(Func.context)
         self.SymbolTable.pop()
@@ -214,7 +216,7 @@ class TreeVisitor(jsbachVisitor):
                 snote += ",,"
             elif note < 23:
                 snote += ","
-            snote += " "
+        snote += " "
         return snote
 
     def playOneNote(self, note):
@@ -388,7 +390,7 @@ class TreeVisitor(jsbachVisitor):
     def codeNote(self, note):
         notesToValues = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6}
         val = note[0]
-        
+
         if len(note) == 1:      # si no hi ha nombre correspone al 4
             offset = 4*7
         elif len(note) == 2:
@@ -399,7 +401,7 @@ class TreeVisitor(jsbachVisitor):
             else:
                 offset = int(note[1])*7
         else:
-            
+
             offset = int(note[1])*7
             if note[2] == '#':
                     offset += 59
@@ -421,8 +423,6 @@ class TreeVisitor(jsbachVisitor):
                     n = self.codeNote(note)
                     chord.append(n)
             return chord
-
-
 
     # ------------------- VARIDENT RULE ------------------ #
 

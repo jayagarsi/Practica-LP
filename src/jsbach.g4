@@ -39,7 +39,7 @@ statement
            | PLAY expr                                                                       # playStmt
            | varident ADDLIST expr                                                           # addToListStmt
            | CUTLIST varident '[' expr ']'                                                   # cutFromListStmt
-           | KEYSIGNATURE '=' KEYSIGS                                                        # setKeySignature
+           | KEYSIGNATURE SET KEYSIGS                                                        # setKeySignature
            | TEMPO SET INTVAL                                                                # setTempo
            ;
 

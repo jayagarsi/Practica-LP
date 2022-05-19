@@ -16,12 +16,16 @@ class CodeAndAudioGenerator():
         self.generateMP3File()
 
     def writeLilyPondFile(self):
+        keyS = ""
+        if self.key != "":
+            keyS = "        \\key " + self.key[0].lower() + " \\" + self.key[1:] + "\n"
+
         file_object = open(self.lilyFileName, 'w')
         s =  "\\version \"2.20.0\" \n"
         s += "\\score {\n"
         s += "   \\absolute { \n"
         s += "        \\tempo 4 = " + self.tempo + "\n"
-        s += "        \\key " + self.key[0] + " \\" + self.key[1:] + "\n"
+        s +=  keyS
         s += "         " + self.notesString + "\n"
         s += "   } \n"
         s += "   \\layout { } \n"

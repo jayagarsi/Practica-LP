@@ -1,11 +1,10 @@
 import sys
 from CodeAndAudioGenerator import *
 from MyJSBachVisitor import *
-from itertools import takewhile
 
 
 def main():
-    if len(sys.argv) < 1:
+    if len(sys.argv) < 2:
         print("Usage: python3 jsbach.py program.jsb [functionname] [parameters]")
     else:
         programName = sys.argv[1]
