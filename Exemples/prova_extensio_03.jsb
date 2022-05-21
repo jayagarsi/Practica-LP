@@ -1,7 +1,7 @@
 ~~~ Joc de prova per veure el funcionament dels acords ~~~
 
 Main |:
-    a <- {A0 B1# <C4 C5> B3}
+    a <- {D6 <A4 A5>}
     Acords a
     <!> "Played some chords"
 :|
