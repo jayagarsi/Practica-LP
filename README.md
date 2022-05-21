@@ -41,6 +41,17 @@ parser.addErrorListener(MyErrorListener())
 
 ## Extensions
 
+Aquí explicaré amb més detall totes les extensions que he realitzat per la pràctica
+
 ### Operacions amb booleans
 
-### Notes sostingudes o bemols
+### Sostinguts i Bemols
+
+### Canvi de Tempo General
+
+### Canvi d'Armadura
+
+### Acords
+
+Tal i com permet el llenguatge lilypond, JSBach també permet tocar acords utilitzant la notació següent: ```< NOTE_1, ..., NOTE_N >``` generant un acord amb les notes introduïdes. D'aquesta manera, al executar el [codi de prova de l'extensió 3](https://github.com/jayagarsi/Practica-LP/blob/master/Exemples/prova_extensio_03.jsb), obtindrem la següent partitura:
+
