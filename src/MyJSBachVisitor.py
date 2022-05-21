@@ -182,40 +182,34 @@ class TreeVisitor(jsbachVisitor):
         self.visit(ctx.writeparams())
 
     def decodeNote(self, note):
-        val = note % 7
-        valuesToNotes = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g"}
-        snote = valuesToNotes[val]
+        accidental = ""
 
         # Tenim un bemol en la nota
         if note >= 59*2:
             note -= 59*2
-            snote += 'es'
+            accidental = 'es'
 
         # Tenim un sostingut en la nota
         elif note >= 59:
             note -= 59
-            snote += 'is'
+            accidental += 'is'
 
-        if note > 29:
-            if note < 37:
-                snote += "'"
-            elif note < 44:
-                snote += "''"
-            elif note < 51:
-                snote += "'''"
-            elif note < 58:
-                snote += "''''"
-            else:
-                snote += "'''''"
+        val = (note-2) % 7
+        valuesToNotes = {0: "c", 1: "d", 2: "e", 3: "f", 4: "g", 5: "a", 6: "b"}
+        toneToValue = {1: ",,", 2: ",", 3: "", 4: "'", 5: "''", 6: "'''", 7: "''''", 8: "'''''"}
+        snote = valuesToNotes[val]
+
+        if note == 0:
+            snote = "a" + accidental + ",,,"
+        elif note == 1:
+            snote = "b" + accidental + ",,,"
+
         else:
-            if note < 2:
-                snote += ",,,,"
-            elif note < 9:
-                snote += ",,,"
-            elif note < 16:
-                snote += ",,"
-            elif note < 23:
-                snote += ","
+            diff = abs(note-val-2)
+            tone = (diff//7)+1
+            snote += accidental
+            snote += toneToValue[tone]
+
         snote += " "
         return snote
 
@@ -388,25 +382,24 @@ class TreeVisitor(jsbachVisitor):
     # ------------------- NOTES RULE ------------------ #
 
     def codeNote(self, note):
-        notesToValues = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6}
+        notesToValues = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
         val = note[0]
-
         if len(note) == 1:      # si no hi ha nombre correspone al 4
-            offset = 4*7
+            offset = 3*7+2
         elif len(note) == 2:
             if note[1] == '#':
-                offset = 4*7 + 59
+                offset = 3*7 + 59
             elif note[1] == 'b':
-                offset = 4*7 + 59*2
+                offset = 3*7 + 59*2
             else:
-                offset = int(note[1])*7
+                offset = (int(note[1])-1)*7+2
         else:
-
-            offset = int(note[1])*7
+            offset = (int(note[1])-1)*7+2
             if note[2] == '#':
                     offset += 59
             elif note[2] == 'b':
                 offset += 59*2
+        #print(note, " ", notesToValues[val]+offset)
         return notesToValues[val]+offset
 
     def visitNotes(self, ctx):
@@ -414,7 +407,6 @@ class TreeVisitor(jsbachVisitor):
         if len(chd) == 1:
             note = ctx.NOTES(0).getText()
             return self.codeNote(note)
-
         else:
             chord = []
             for i in chd:

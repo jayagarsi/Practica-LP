@@ -39,8 +39,8 @@ statement
            | PLAY expr                                                                       # playStmt
            | varident ADDLIST expr                                                           # addToListStmt
            | CUTLIST varident '[' expr ']'                                                   # cutFromListStmt
-           | KEYSIGNATURE SET KEYSIGS                                                        # setKeySignature
-           | TEMPO SET INTVAL                                                                # setTempo
+           | KEYSIGNATURE ASSIGN KEYSIGS                                                     # setKeySignature
+           | TEMPO ASSIGN INTVAL                                                             # setTempo
            ;
 
 expr : '(' expr ')'                                                 # parenthesis
@@ -58,6 +58,11 @@ expr : '(' expr ')'                                                 # parenthesi
      | varident                                                     # exprIdent
      ;
 
+/*left_expr : VARID
+          | KEYSIGS
+          | TEMPO
+          ;
+*/
 arraytype : '{' (notes)* '}'
           | '{' (INTVAL)*'}'
           ;
@@ -118,7 +123,6 @@ LEN         : '#'  ;
 
 /*-----Notes-----*/
 PLAY        : '<:>' ;
-SET         : '=' ;
 NOTES       : ('A'..'G') ('0'..'8')? ('#'|'b')? (',' ('1'|'2'|'8'|'16'))? ;
 KEYSIGNATURE: '_ksg_';
 TEMPO       : '_tmp_';
