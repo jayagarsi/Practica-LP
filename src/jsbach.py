@@ -43,8 +43,9 @@ def main():
 
                 tempo = visitor.getNotesTempo()
                 key = visitor.getKeySignature()
+                compas = visitor.getCompasTime()
 
-                codeGen = CodeAndAudioGenerator(fileName, notesString, tempo, key)
+                codeGen = CodeAndAudioGenerator(fileName, notesString, tempo, key, compas)
                 codeGen.executeFileCreation()
 
         except jsbachExceptions as e:

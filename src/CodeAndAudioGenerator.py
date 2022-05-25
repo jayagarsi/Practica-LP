@@ -2,12 +2,13 @@ import os
 
 
 class CodeAndAudioGenerator():
-    def __init__(self, fN, notesS, temp, keyS):
+    def __init__(self, fN, notesS, temp, keyS, compasS):
         self.fileName = fN
         self.lilyFileName = self.fileName + ".lily"
         self.notesString = notesS
         self.tempo = str(temp)
         self.key = keyS
+        self.compas = compasS
 
     def executeFileCreation(self):
         self.writeLilyPondFile()
@@ -17,8 +18,11 @@ class CodeAndAudioGenerator():
 
     def writeLilyPondFile(self):
         keyS = ""
+        compasS = ""
         if self.key != "":
             keyS = "        \\key " + self.key[0].lower() + " \\" + self.key[1:] + "\n"
+        if self.compas != "":
+            compasS = "        \\time " + self.compas + "\n"
 
         file_object = open(self.lilyFileName, 'w')
         s =  "\\version \"2.20.0\" \n"
@@ -26,6 +30,7 @@ class CodeAndAudioGenerator():
         s += "   \\absolute { \n"
         s += "        \\tempo 4 = " + self.tempo + "\n"
         s +=  keyS
+        s +=  compasS
         s += "         " + self.notesString + "\n"
         s += "   } \n"
         s += "   \\layout { } \n"
@@ -50,7 +55,6 @@ class CodeAndAudioGenerator():
         mp3FilePath = "./" + self.fileName + ".mp3"
         if os.path.exists(mp3FilePath):
             os.remove(mp3FilePath)
-
         print("----- GENERATING MP3 FILE -----")
         wavInstruction = "ffmpeg -i " + self.fileName + ".wav -codec:a libmp3lame -qscale:a 2 " + self.fileName + ".mp3"
         os.system(wavInstruction)

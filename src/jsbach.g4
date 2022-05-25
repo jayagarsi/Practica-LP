@@ -29,8 +29,10 @@ paramstring : STRING
 writeparams : (paramstring|expr)*
             ;
 
-statement
-           : VARID ASSIGN expr                                                               # assignStmt
+statement  : VARID ASSIGN expr                                                               # assignStmt
+           | KEYSIGNATURE ASSIGN KEYSIGS                                                     # setKeySignature
+           | TEMPO ASSIGN INTVAL                                                             # setTempo
+           | COMPASTIME ASSIGN CMPTIME                                                       # setCompasTime
            | IF expr BEGINBLOCK statements ENDBLOCK (ELSE BEGINBLOCK statements ENDBLOCK)?   # ifStmt
            | WHILE expr BEGINBLOCK statements ENDBLOCK                                       # whileStmt
            | procident paramexp?                                                             # procCall
@@ -39,8 +41,6 @@ statement
            | PLAY expr                                                                       # playStmt
            | varident ADDLIST expr                                                           # addToListStmt
            | CUTLIST varident '[' expr ']'                                                   # cutFromListStmt
-           | KEYSIGNATURE ASSIGN KEYSIGS                                                     # setKeySignature
-           | TEMPO ASSIGN INTVAL                                                             # setTempo
            ;
 
 expr : '(' expr ')'                                                 # parenthesis
@@ -54,17 +54,11 @@ expr : '(' expr ')'                                                 # parenthesi
      | expr op=OR  expr                                             # boolean
      | arraytype                                                    # exprArray
      | notes                                                        # exprNotes
-     | (INTVAL|BOOLVAL)                                             # value
+     | (INTVAL|FLOATNUM|BOOLVAL)                                    # value
      | varident                                                     # exprIdent
      ;
 
-/*left_expr : VARID
-          | KEYSIGS
-          | TEMPO
-          ;
-*/
-arraytype : '{' (notes)* '}'
-          | '{' (INTVAL)*'}'
+arraytype : '{' (expr)* '}'
           ;
 
 notes : NOTES
@@ -126,7 +120,9 @@ PLAY        : '<:>' ;
 NOTES       : ('A'..'G') ('0'..'8')? ('#'|'b')? (',' ('1'|'2'|'8'|'16'))? ;
 KEYSIGNATURE: '_ksg_';
 TEMPO       : '_tmp_';
+COMPASTIME  : '_ctm_';
 KEYSIGS     : ('A'..'G') ('major' | 'minor') ;
+CMPTIME     : ('2'..'6') '/' ('2'..'6');
 
 /*-----Funcions-----*/
 PROCID      : ('A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;             // Function IDs start with a capital letter
@@ -135,6 +131,7 @@ PROCID      : ('A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;             // Funct
 BOOLVAL     : 'true' | 'false' ;
 VARID       : ('a'..'z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')* ;
 INTVAL      : ('0'..'9')+ ;
+FLOATNUM    : ('0'..'9')+ '.' ('0'..'9')+;
 
 STRING    : '"' ( ESC_SEQ | ~('\\'|'"') )* '"' ;
 

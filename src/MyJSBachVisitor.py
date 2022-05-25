@@ -4,6 +4,7 @@ from jsbachVisitor import jsbachVisitor
 from jsbachLexer import jsbachLexer
 from jsbachParser import jsbachParser
 from antlr4.error.ErrorListener import ErrorListener
+from itertools import dropwhile
 
 
 class jsbachErrorListener(ErrorListener):
@@ -31,6 +32,7 @@ class TreeVisitor(jsbachVisitor):
         self.firstParams = firstFunctionParams
         self.tempo = 120
         self.key = ""
+        self.compas = ""
 
     def getNotesString(self):
         return self.notesString
@@ -40,6 +42,9 @@ class TreeVisitor(jsbachVisitor):
 
     def getKeySignature(self):
         return self.key
+
+    def getCompasTime(self):
+        return self.compas
 
     # ------------------- PROCEDURES RULE ------------------ #
 
@@ -76,8 +81,7 @@ class TreeVisitor(jsbachVisitor):
         funcParams = self.visit(Func.params)
 
         if len(funcParams) != len(self.firstParams):
-            msg = "Passed parameters don't match with parameters in "
-            msg += Func.name
+            msg = "Passed parameters don't match with parameters in " + Func.name
             raise jsbachExceptions(msg)
 
         for i in range(len(self.firstParams)):
@@ -124,6 +128,18 @@ class TreeVisitor(jsbachVisitor):
         Scope[id] = exp
         self.SymbolTable[self.actualScope] = Scope
 
+    def visitSetKeySignature(self, ctx):
+        keysig = ctx.KEYSIGS().getText()
+        self.key = keysig
+
+    def visitSetTempo(self, ctx):
+        value = ctx.INTVAL().getText()
+        self.tempo = value
+
+    def visitSetCompasTime(self, ctx):
+        value = ctx.CMPTIME().getText()
+        self.compas = value
+
     def visitIfStmt(self, ctx):
         chd = list(ctx.getChildren())
         expr = self.visit(ctx.expr())
@@ -161,8 +177,7 @@ class TreeVisitor(jsbachVisitor):
         funcParams = self.visit(Func.params)
 
         if len(passedParams) != len(funcParams):
-            msg = "Passed params in calling function don't match with params in "
-            msg += Func.name
+            msg = "Passed params in calling function don't match with params in " + Func.name
             raise jsbachExceptions(msg)
 
         if len(chd) == 2:
@@ -183,33 +198,50 @@ class TreeVisitor(jsbachVisitor):
 
     def decodeNote(self, note):
         accidental = ""
+        tempo = ""
+        
+        #if note >= 59*16:
+        #    note -= 59*16
+        #    tempo = "16"
+        #elif note >= 59*8:
+        #    note -= 59*8
+        #    tempo = "8"
+        #elif note >= 59*2:
+        #    note -= 59*2
+        #    tempo = "2"
+        #elif note >= 59:
+        #    note -= 59
+        #    tempo = "1"
+        #print(note)
 
-        # Tenim un bemol en la nota
-        if note >= 59*2:
-            note -= 59*2
-            accidental = 'es'
-
-        # Tenim un sostingut en la nota
-        elif note >= 59:
-            note -= 59
-            accidental += 'is'
-
-        val = (note-2) % 7
+        if isinstance(note, float):
+            acc = note % 1
+            # Tenim un bemol en la nota
+            if acc == 0.25:
+                note -= 0.25
+                accidental = 'es'
+            # Tenim un sostingut en la nota
+            elif acc == 0.75:
+                note -= 0.75
+                accidental = 'is'
+            else:
+                msg = "Non playable note with value" + note
+                raise jsbachExceptions(msg)
+        
+        val = (int(note)-2) % 7
         valuesToNotes = {0: "c", 1: "d", 2: "e", 3: "f", 4: "g", 5: "a", 6: "b"}
         toneToValue = {1: ",,", 2: ",", 3: "", 4: "'", 5: "''", 6: "'''", 7: "''''", 8: "'''''"}
         snote = valuesToNotes[val]
-
         if note == 0:
             snote = "a" + accidental + ",,,"
         elif note == 1:
             snote = "b" + accidental + ",,,"
-
         else:
             diff = abs(note-val-2)
             tone = (diff//7)+1
             snote += accidental
             snote += toneToValue[tone]
-
+        snote += tempo
         snote += " "
         return snote
 
@@ -226,11 +258,11 @@ class TreeVisitor(jsbachVisitor):
             snote = self.decodeNote(note)
             snote = self.decodeNote(note)
             self.notesString += snote
-        self.notesString += '> '
+        self.notesString += '> \n'
 
     def visitPlayStmt(self, ctx):
         notes = self.visit(ctx.expr())
-        if isinstance(notes, int):
+        if isinstance(notes, int) or isinstance(notes, float):
             self.playOneNote(notes)
         else:
             for n in notes:
@@ -253,20 +285,12 @@ class TreeVisitor(jsbachVisitor):
         array = self.visit(ctx.varident())
         offset = self.visit(ctx.expr())
         if offset-1 < 0 or offset-1 >= len(array):
-            msg = "Out of bounds acces in array " + id
+            msg = "Out of bounds index acces " + offset + " in array " + id
             raise jsbachExceptions(msg)
         del array[offset-1]
         Scope = self.SymbolTable[self.actualScope]
         Scope[id] = array
         self.SymbolTable[self.actualScope] = Scope
-
-    def visitSetTempo(self, ctx):
-        value = ctx.INTVAL().getText()
-        self.tempo = value
-
-    def visitSetKeySignature(self, ctx):
-        keysig = ctx.KEYSIGS().getText()
-        self.key = keysig
 
     # ------------------- EXPR RULE ------------------ #
 
@@ -288,7 +312,7 @@ class TreeVisitor(jsbachVisitor):
         array = self.visit(ctx.varident())
         offset = self.visit(ctx.expr())
         if not isinstance(offset, int):
-            raise jsbachExceptions("Non integer index in array access")
+            raise jsbachExceptions("Non integer index (" + offset +") in array access")
         if offset-1 < 0 or offset-1 > len(array):
             arrayId = ctx.varident().VARID().getText();
             msg = "Out of bounds access in array"
@@ -343,7 +367,6 @@ class TreeVisitor(jsbachVisitor):
         op = jsbachParser.symbolicNames[op.getSymbol().type]
         val1 = self.visit(expr1)
         val2 = self.visit(expr2)
-
         if op == "AND":
             return val1 and val2
         else:
@@ -361,6 +384,8 @@ class TreeVisitor(jsbachVisitor):
             return True
         elif chd[0].getText() == 'false':
             return False
+        elif '.' in chd[0].getText():
+            return float(chd[0].getText())
         else:
             return int(chd[0].getText())
 
@@ -376,7 +401,10 @@ class TreeVisitor(jsbachVisitor):
             c = i.getText()
             if c != '{' and c != '}':
                 val = self.visit(i)
-                l.append(val)
+                if isinstance(val, list):
+                    l.append(val[0])
+                else:
+                    l.append(val)
         return l
 
     # ------------------- NOTES RULE ------------------ #
@@ -384,22 +412,30 @@ class TreeVisitor(jsbachVisitor):
     def codeNote(self, note):
         notesToValues = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
         val = note[0]
+        prod = 1
+        offset = 0
         if len(note) == 1:      # si no hi ha nombre correspone al 4
             offset = 3*7+2
         elif len(note) == 2:
             if note[1] == '#':
-                offset = 3*7 + 59
+                offset = 3*7 + 0.75
             elif note[1] == 'b':
-                offset = 3*7 + 59*2
+                offset = 3*7 + 0.25
             else:
                 offset = (int(note[1])-1)*7+2
+
         else:
             offset = (int(note[1])-1)*7+2
             if note[2] == '#':
-                    offset += 59
+                offset = 0.75
             elif note[2] == 'b':
-                offset += 59*2
-        #print(note, " ", notesToValues[val]+offset)
+                offset = 0.25
+
+        #if ',' in note:
+        #     f = lambda x : x != ','
+        #    tempo = list(dropwhile(f, note))
+        #    tempo = tempo[1]
+        #    offset += int(tempo)*59
         return notesToValues[val]+offset
 
     def visitNotes(self, ctx):
@@ -414,7 +450,7 @@ class TreeVisitor(jsbachVisitor):
                 if note != '<' and note != '>':
                     n = self.codeNote(note)
                     chord.append(n)
-            return chord
+            return [chord]
 
     # ------------------- VARIDENT RULE ------------------ #
 
