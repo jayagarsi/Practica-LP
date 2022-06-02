@@ -122,23 +122,23 @@ class TreeVisitor(jsbachVisitor):
     # ------------------- STATEMENT RULE ------------------ #
 
     def visitAssignStmt(self, ctx):
-        id = ctx.VARID().getText()
-        exp = self.visit(ctx.expr())
-        Scope = self.SymbolTable[self.actualScope]
-        Scope[id] = exp
-        self.SymbolTable[self.actualScope] = Scope
-
-    def visitSetKeySignature(self, ctx):
-        keysig = ctx.KEYSIGS().getText()
-        self.key = keysig
-
-    def visitSetTempo(self, ctx):
-        value = ctx.INTVAL().getText()
-        self.tempo = value
-
-    def visitSetCompasTime(self, ctx):
-        value = ctx.CMPTIME().getText()
-        self.compas = value
+        (id, offset) = self.visit(ctx.left_expr())
+        value = self.visit(ctx.expr())
+        if id == "_ksg_":
+            self.key = value
+        elif id == "_tmp_":
+            self.tempo = value
+        elif id == "_ctm_":
+            self.compas = value
+        else:
+            Scope = self.SymbolTable[self.actualScope]
+            if offset != -1:
+                array = Scope[id]
+                array[offset-1] = value
+                Scope[id] = array
+            else:
+                Scope[id] = value
+            self.SymbolTable[self.actualScope] = Scope
 
     def visitIfStmt(self, ctx):
         chd = list(ctx.getChildren())
@@ -256,7 +256,6 @@ class TreeVisitor(jsbachVisitor):
         self.notesString += '<'
         for note in notes:
             snote = self.decodeNote(note)
-            snote = self.decodeNote(note)
             self.notesString += snote
         self.notesString += '> \n'
 
@@ -312,11 +311,10 @@ class TreeVisitor(jsbachVisitor):
         array = self.visit(ctx.varident())
         offset = self.visit(ctx.expr())
         if not isinstance(offset, int):
-            raise jsbachExceptions("Non integer index (" + offset +") in array access")
+            raise jsbachExceptions("Non integer index (" + str(offset) +") in array access " + array)
         if offset-1 < 0 or offset-1 > len(array):
             arrayId = ctx.varident().VARID().getText();
-            msg = "Out of bounds access in array"
-            msg += arrayId
+            msg = "Out of bounds access in array: " + arrayId + "[" + str(offset) + "]"
             raise jsbachExceptions(msg)
         return array[offset-1]
 
@@ -366,11 +364,18 @@ class TreeVisitor(jsbachVisitor):
         expr1, op, expr2 = ctx.getChildren()
         op = jsbachParser.symbolicNames[op.getSymbol().type]
         val1 = self.visit(expr1)
-        val2 = self.visit(expr2)
         if op == "AND":
-            return val1 and val2
+            if not val1:
+                return False
+            else:
+                val2 = self.visit(expr2)
+                return val1 and val2
         else:
-            return val1 or val2
+            if val1:
+                return True
+            else:
+                val2 = self.visit(expr2)
+                return val1 or val2
 
     def visitExprArray(self, ctx):
         return self.visit(ctx.arraytype())
@@ -392,19 +397,28 @@ class TreeVisitor(jsbachVisitor):
     def visitExprIdent(self, ctx):
         return self.visit(ctx.varident())
 
+    # ------------------- LEFT_EXPR RULE ------------------#
+
+    def visitLeft_expr(self, ctx):
+        chd = list(ctx.getChildren())
+        id = chd[0].getText()
+        offset = -1
+        if len(chd) > 1:
+            offset = self.visit(ctx.expr())
+        return (id, offset)
+
     # ------------------- ARRAYTYPE RULE ------------------#
 
     def visitArraytype(self, ctx):
         chd = list(ctx.getChildren())
         l = []
+        index = 0
         for i in chd:
             c = i.getText()
-            if c != '{' and c != '}':
+            if index != 0 and index != len(chd)-1:
                 val = self.visit(i)
-                if isinstance(val, list):
-                    l.append(val[0])
-                else:
-                    l.append(val)
+                l.append(val)
+            index += 1
         return l
 
     # ------------------- NOTES RULE ------------------ #
@@ -440,17 +454,8 @@ class TreeVisitor(jsbachVisitor):
 
     def visitNotes(self, ctx):
         chd = list(ctx.getChildren())
-        if len(chd) == 1:
-            note = ctx.NOTES(0).getText()
-            return self.codeNote(note)
-        else:
-            chord = []
-            for i in chd:
-                note = i.getText()
-                if note != '<' and note != '>':
-                    n = self.codeNote(note)
-                    chord.append(n)
-            return [chord]
+        note = ctx.NOTES().getText()
+        return self.codeNote(note)
 
     # ------------------- VARIDENT RULE ------------------ #
 

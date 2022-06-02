@@ -29,10 +29,7 @@ paramstring : STRING
 writeparams : (paramstring|expr)*
             ;
 
-statement  : VARID ASSIGN expr                                                               # assignStmt
-           | KEYSIGNATURE ASSIGN KEYSIGS                                                     # setKeySignature
-           | TEMPO ASSIGN INTVAL                                                             # setTempo
-           | COMPASTIME ASSIGN CMPTIME                                                       # setCompasTime
+statement  : left_expr ASSIGN expr                                                           # assignStmt
            | IF expr BEGINBLOCK statements ENDBLOCK (ELSE BEGINBLOCK statements ENDBLOCK)?   # ifStmt
            | WHILE expr BEGINBLOCK statements ENDBLOCK                                       # whileStmt
            | procident paramexp?                                                             # procCall
@@ -58,11 +55,16 @@ expr : '(' expr ')'                                                 # parenthesi
      | varident                                                     # exprIdent
      ;
 
-arraytype : '{' (expr)* '}'
+left_expr : VARID ('[' expr ']')?
+          | KEYSIGNATURE
+          | TEMPO
+          | COMPASTIME
+          ;
+
+arraytype : '{' (expr|arraytype)* '}'
           ;
 
 notes : NOTES
-      | '<' (NOTES)+ '>'
       ;
 
 procident : PROCID
