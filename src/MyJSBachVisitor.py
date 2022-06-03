@@ -63,9 +63,7 @@ class TreeVisitor(jsbachVisitor):
         if self.firstFunction != "":
             if self.firstFunction not in self.Procedures:
                 if "Main" not in self.Procedures:
-                    msg = "Trying to execute a non existing procedure named "
-                    msg += self.firstFunction
-                    msg += " in a program without Main"
+                    msg = "Trying to execute a non existing procedure named '" + self.firstFunction + "' in a program without Main"
                     raise jsbachExceptions(msg)
                 else:
                     Func = self.Procedures["Main"]
@@ -99,11 +97,11 @@ class TreeVisitor(jsbachVisitor):
 
     def visitParameters(self, ctx):
         params = []
-        for i in ctx.getChildren():
-            id = self.visit(i)
+        for oneParam in ctx.getChildren():
+            id = self.visit(oneParam)
             Scope = self.SymbolTable[self.actualScope]
             Scope[id] = 0
-            params += [i.getText()]
+            params += [oneParam.getText()]
         return params
 
     # ------------------- PARAMSTRING RULE ------------------ #
@@ -174,20 +172,16 @@ class TreeVisitor(jsbachVisitor):
             passedParams = self.visit(ctx.paramexp())
         procid = self.visit(ctx.procident())
         Func = self.Procedures[procid]
-
         Scope = {}
         self.actualScope += 1
         self.SymbolTable.append(Scope)
         funcParams = self.visit(Func.params)
-
         if len(passedParams) != len(funcParams):
             msg = "Passed params in calling function don't match with params in " + Func.name
             raise jsbachExceptions(msg)
-
         if len(chd) == 2:
             for i in range(len(passedParams)):
                 Scope[funcParams[i]] = passedParams[i]
-
         self.visit(Func.context)
         self.SymbolTable.pop()
         self.actualScope -= 1
@@ -370,13 +364,13 @@ class TreeVisitor(jsbachVisitor):
         op = jsbachParser.symbolicNames[op.getSymbol().type]
         val1 = self.visit(expr1)
         if op == "AND":
-            if not val1:
+            if not val1:            # Evaluacio lazy de l'AND
                 return False
             else:
                 val2 = self.visit(expr2)
                 return val1 and val2
         else:
-            if val1:
+            if val1:                # Evaluacio lazy de l'OR
                 return True
             else:
                 val2 = self.visit(expr2)
@@ -430,11 +424,10 @@ class TreeVisitor(jsbachVisitor):
         chd = list(ctx.getChildren())
         l = []
         index = 0
-        for i in chd:
-            c = i.getText()
-            if index != 0 and index != len(chd)-1:
-                val = self.visit(i)
-                l.append(val)
+        for i in range(1, len(chd)-1):
+            c = chd[i].getText()
+            val = self.visit(chd[i])
+            l.append(val)
             index += 1
         return l
 

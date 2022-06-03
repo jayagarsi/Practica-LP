@@ -1,4 +1,3 @@
-import sys
 from CodeAndAudioGenerator import *
 from MyJSBachVisitor import *
 
