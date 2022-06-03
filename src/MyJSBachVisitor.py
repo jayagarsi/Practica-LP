@@ -5,6 +5,7 @@ from jsbachLexer import jsbachLexer
 from jsbachParser import jsbachParser
 from antlr4.error.ErrorListener import ErrorListener
 from itertools import dropwhile
+from random import randint
 
 
 class jsbachErrorListener(ErrorListener):
@@ -75,7 +76,6 @@ class TreeVisitor(jsbachVisitor):
                 raise jsbachExceptions("Trying to execute a program without a Main procedure")
             else:
                 Func = self.Procedures["Main"]
-
         Scope = {}
         self.SymbolTable.append(Scope)
         funcParams = self.visit(Func.params)
@@ -134,6 +134,10 @@ class TreeVisitor(jsbachVisitor):
             Scope = self.SymbolTable[self.actualScope]
             if offset != -1:
                 array = Scope[id]
+                if offset < 1 or offset > len(array):
+                    msg = "Out of bounds write access in array: " + id + "[" + str(offset) + "]"
+                    raise jsbachExceptions(msg)
+
                 array[offset-1] = value
                 Scope[id] = array
             else:
@@ -199,20 +203,21 @@ class TreeVisitor(jsbachVisitor):
     def decodeNote(self, note):
         accidental = ""
         tempo = ""
-        
-        #if note >= 59*16:
-        #    note -= 59*16
-        #    tempo = "16"
-        #elif note >= 59*8:
-        #    note -= 59*8
-        #    tempo = "8"
-        #elif note >= 59*2:
-        #    note -= 59*2
-        #    tempo = "2"
-        #elif note >= 59:
-        #    note -= 59
-        #    tempo = "1"
-        #print(note)
+        if note >= 52*8:
+            note -= 52*8
+            tempo = "16"
+        elif note >= 52*6:
+            note -= 52*6
+            tempo = "8"
+        elif note >= 52*4:
+            note -= 52*4
+            tempo = "4"
+        elif note >= 52*2:
+            note -= 52*2
+            tempo = "2"
+        elif note >= 52:
+            note -= 52
+            tempo = "1"
 
         if isinstance(note, float):
             acc = note % 1
@@ -225,7 +230,7 @@ class TreeVisitor(jsbachVisitor):
                 note -= 0.75
                 accidental = 'is'
             else:
-                msg = "Non playable note with value" + note
+                msg = "Non playable note with value " + note
                 raise jsbachExceptions(msg)
         
         val = (int(note)-2) % 7
@@ -254,10 +259,10 @@ class TreeVisitor(jsbachVisitor):
 
     def playChord(self, notes):
         self.notesString += '<'
-        for note in notes:
-            snote = self.decodeNote(note)
+        for n in notes:
+            snote = self.decodeNote(n)
             self.notesString += snote
-        self.notesString += '> \n'
+        self.notesString += '>4 \n'
 
     def visitPlayStmt(self, ctx):
         notes = self.visit(ctx.expr())
@@ -284,7 +289,7 @@ class TreeVisitor(jsbachVisitor):
         array = self.visit(ctx.varident())
         offset = self.visit(ctx.expr())
         if offset-1 < 0 or offset-1 >= len(array):
-            msg = "Out of bounds index acces " + offset + " in array " + id
+            msg = "Out of bounds delete index in array: " + id + "[" + str(offset) + "]"
             raise jsbachExceptions(msg)
         del array[offset-1]
         Scope = self.SymbolTable[self.actualScope]
@@ -312,9 +317,9 @@ class TreeVisitor(jsbachVisitor):
         offset = self.visit(ctx.expr())
         if not isinstance(offset, int):
             raise jsbachExceptions("Non integer index (" + str(offset) +") in array access " + array)
-        if offset-1 < 0 or offset-1 > len(array):
+        if offset < 1 or offset > len(array):
             arrayId = ctx.varident().VARID().getText();
-            msg = "Out of bounds access in array: " + arrayId + "[" + str(offset) + "]"
+            msg = "Out of bounds read access in array: " + arrayId + "[" + str(offset) + "]"
             raise jsbachExceptions(msg)
         return array[offset-1]
 
@@ -377,6 +382,18 @@ class TreeVisitor(jsbachVisitor):
                 val2 = self.visit(expr2)
                 return val1 or val2
 
+    def visitRandomNumber(self, ctx):
+        ini = self.visit(ctx.expr(0))
+        end = self.visit(ctx.expr(1))
+        if not isinstance(ini, int) or not isinstance(end, int):
+            msg = "Non integer domain for random generator: [" + str(ini) + ", " + str(end) + "]"
+            raise jsbachExceptions(msg)
+        if ini > end:
+            msg = "Incorrect domain in random generator: [" + str(ini) + ", " + str(end) + "]"
+            raise jsbachExceptions(msg)
+        rand = randint(ini, end)
+        return rand
+
     def visitExprArray(self, ctx):
         return self.visit(ctx.arraytype())
 
@@ -425,31 +442,36 @@ class TreeVisitor(jsbachVisitor):
 
     def codeNote(self, note):
         notesToValues = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
+        accidentalToValue = {"#": 0.75, "b": 0.25}
         val = note[0]
         prod = 1
         offset = 0
+
         if len(note) == 1:      # si no hi ha nombre correspone al 4
             offset = 3*7+2
         elif len(note) == 2:
-            if note[1] == '#':
-                offset = 3*7 + 0.75
-            elif note[1] == 'b':
-                offset = 3*7 + 0.25
-            else:
+            if note[1] != "#" and note[1] != "b":
                 offset = (int(note[1])-1)*7+2
+            else:
+                acc = note[1]
+                offset = 3*7+2 + accidentalToValue[acc]
 
+        elif len(note) == 3:
+            if note[1] == ',':
+                offset = 3*7+2 + int(note[2])*52
+            else:
+                acc = note[2]
+                offset = (int(note[1])-1)*7+2 + accidentalToValue[acc]
+        elif len(note) == 4:
+            tmp = note[3]
+            if note[1] != "#" and note[1] != "b":
+                offset = (int(note[1])-1)*7+2 + int(tmp)*52
+            else:
+                offset = 3*7+2 + int(tmp)*52
         else:
-            offset = (int(note[1])-1)*7+2
-            if note[2] == '#':
-                offset = 0.75
-            elif note[2] == 'b':
-                offset = 0.25
-
-        #if ',' in note:
-        #     f = lambda x : x != ','
-        #    tempo = list(dropwhile(f, note))
-        #    tempo = tempo[1]
-        #    offset += int(tempo)*59
+            acc = note[2]
+            tmp = note[4]
+            offset = (int(note[1])-1)*7+2 + accidentalToValue[acc] + int(tmp)*52
         return notesToValues[val]+offset
 
     def visitNotes(self, ctx):

@@ -46,9 +46,10 @@ expr : '(' expr ')'                                                 # parenthesi
      | expr op=(MUL|DIV|MOD) expr                                   # arithmetic
      | expr op=(PLUS|MINUS) expr                                    # arithmetic
      | expr op=(EQU|NEQ|LET|LEQ|GET|GEQ) expr                       # relational
-     | LEN varident                                                 # listsSize
      | expr op=AND expr                                             # boolean
      | expr op=OR  expr                                             # boolean
+     | LEN varident                                                 # listsSize
+     | RANDOM '['expr  expr']'                                      # randomNumber
      | arraytype                                                    # exprArray
      | notes                                                        # exprNotes
      | (INTVAL|FLOATNUM|BOOLVAL)                                    # value
@@ -119,7 +120,7 @@ LEN         : '#'  ;
 
 /*-----Notes-----*/
 PLAY        : '<:>' ;
-NOTES       : ('A'..'G') ('0'..'8')? ('#'|'b')? (',' ('1'|'2'|'8'|'16'))? ;
+NOTES       : ('A'..'G') ('0'..'8')? ('#'|'b')? ( ',' ('1'|'2'|'4'|'6'|'8'))?;
 KEYSIGNATURE: '_ksg_';
 TEMPO       : '_tmp_';
 COMPASTIME  : '_ctm_';
@@ -127,6 +128,7 @@ KEYSIGS     : ('A'..'G') ('major' | 'minor') ;
 CMPTIME     : ('2'..'6') '/' ('2'..'6');
 
 /*-----Funcions-----*/
+RANDOM      : 'random';
 PROCID      : ('A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;             // Function IDs start with a capital letter
 
 /*-----Tipus basics-----*/
