@@ -45,9 +45,13 @@ Aquí explicaré amb més detall totes les extensions que he realitzat per la pr
 
 ### Operacions amb booleans
 
+### Nombres aleatòris
+
 ### Sostinguts i Bemols
 
-### Canvi de Tempo General
+### Canvi de Tempo de la Negra (base)
+
+### Canvi de Tempo d'una Nota
 
 ### Canvi d'Armadura
 
