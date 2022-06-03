@@ -1,5 +1,7 @@
 ~~~ Joc de Prova amb els ritmes de cada nota ~~~
 
 Main |:
-  <:> A,2
+  a <- {A,8 B,8 C,8 D4,2 {A4 B4 C4}}
+  <:> a
+  <:> A4#,6
 :|

@@ -2,54 +2,56 @@
 
 Merge a l m r |:
 
-    leftAux <- {}
-    rightAux <- {}
-    i <- 1
-    while i <= #a |:
-        leftAux << a[l+i]
-        i <- i+1
+    nl <- m-l+1
+    nr <- r-m-1
+
+    lArr <- {}
+    rArr <- {}
+
+    il <- 1
+    while il <= nl |:
+        lArr << a[il+1]
+        il <- il+1
     :|
 
-    i <- 1
-    while i <= #a |:
-        leftAux << a[m+l+i]
-        i <- i+1
-    :|
+    ir <- 1
+    while ir <= nl |:
+        rArr << a[ir+1]
+        ir <- ir+1
+    :|    
 
     i <- 1
     j <- 1
-    k <- l+1
-
-    while i <= #leftAux and j <= #rightAux |:
-        if leftAux[i] < rightAux[j] |:
-            a[k] <- leftAux[i]
+    k <- l
+    while i < nl and j < nr |:
+        if lArr[i] <= rArr[k] |:
+            a[k] <- lArr[i]
             i <- i+1
         :|
-
         else |:
-            a[k] <- rightAux[j]
+            a[k] <- rArr[j]
             j <- j+1
         :|
         k <- k+1
     :|
 
-    while i <= #leftAux |:
-        a[k] <- leftAux[i]
+    while i < nl |:
+        a[k] <- lArr[i]
         i <- i+1
         k <- k+1
     :|
 
-    while j <= #rightAux |:
-        a[k] <- rightAux[j]
+    while j < nr |:
+        a[k] <- rArr[i]
         j <- j+1
         k <- k+1
     :|
+
 :|
 
 Mergesort a l r |:
     if l < r |:
         m <- (l + r)/2
-
         Mergesort a l m
         Mergesort a m+1 r
 
