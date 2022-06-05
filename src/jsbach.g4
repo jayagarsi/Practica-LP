@@ -4,7 +4,7 @@ grammar jsbach;
 /// Parser Rules
 //////////////////////////////////////////////////
 
-// A program is a list of procedures followed by and End Of Line
+// A program is a set of procedures followed by and End Of Line
 program : procedures EOF
         ;
 
@@ -65,7 +65,7 @@ left_expr : VARID ('[' expr ']')?
           | COMPASTIME
           ;
 
-arraytype : '{' (expr|arraytype)* '}'
+arraytype : '{' (expr)* '}'
           ;
 
 notes : NOTES

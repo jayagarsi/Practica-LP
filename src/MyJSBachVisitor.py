@@ -392,12 +392,6 @@ class TreeVisitor(jsbachVisitor):
         rand = randint(ini, end)
         return rand
 
-    def visitExprArray(self, ctx):
-        return self.visit(ctx.arraytype())
-
-    def visitExprNotes(self, ctx):
-        return self.visit(ctx.notes())
-
     def visitValue(self, ctx):
         chd = list(ctx.getChildren())
         if '.' in chd[0].getText():
