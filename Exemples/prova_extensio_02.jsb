@@ -1,12 +1,14 @@
 ~~~ Programa per testejar funcions booleanes ~~~
 
 Main |:
-    a <- true
-    b <- false
-    if a or b |:
-        <!> "Cert si tens or"
+    <!> "Introdueix 2 nombres per vars a i b"
+    <?> a
+    <?> b
+    if a |:
+        <!> "Variable a es certa"
     :|
-    else |:
-        <!> "Cert si tens and"
+
+    if not b |:
+        <!> "Variable b es falsa"
     :|
 :|

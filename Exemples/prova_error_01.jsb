@@ -3,5 +3,5 @@
 Main |:
   <!> "Introdueix nombre"
   <?> a
-  <!> a/b
+  <!> a/0
 :|

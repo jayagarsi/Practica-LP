@@ -1,4 +1,4 @@
-~~~ Prova de canviar el valor d'un array ~~~
+~~~ Prova de canviar el valor d'un array i com es passa per referencia ~~~
 
 Proc a |:
     <!> a

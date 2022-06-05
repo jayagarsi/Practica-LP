@@ -1,4 +1,4 @@
-~~~ Prova arrays ~~~
+~~~ Joc de prova per els procediments ~~~
 
 Main |:
   Tremenda 6 0
