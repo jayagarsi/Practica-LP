@@ -54,13 +54,11 @@ class TreeVisitor(jsbachVisitor):
         for proc in chd:
             procid = proc.PROCID().getText()
             if procid in self.Procedures:
-                msg = "Already existin function with name "
-                msg += procid
-                raise jsbachExceptions(msg)
+                raise jsbachExceptions("There are multiple declarations for a procedure with name " + procid)
             Func = jsbachFunctionInfo(procid, proc.parameters(), proc.statements())
             self.Procedures[procid] = Func
 
-        if self.firstFunction != "":
+        if self.firstFunction != "Main":
             if self.firstFunction not in self.Procedures:
                 if "Main" not in self.Procedures:
                     msg = "Trying to execute a non existing procedure named '" + self.firstFunction + "' in a program without Main"
@@ -122,25 +120,26 @@ class TreeVisitor(jsbachVisitor):
     def visitAssignStmt(self, ctx):
         (id, offset) = self.visit(ctx.left_expr())
         value = self.visit(ctx.expr())
-        if id == "_ksg_":
-            self.key = value
-        elif id == "_tmp_":
-            self.tempo = value
-        elif id == "_ctm_":
-            self.compas = value
+        Scope = self.SymbolTable[self.actualScope]
+        if offset != -1:
+            array = Scope[id]
+            if offset < 1 or offset > len(array):
+                msg = "Out of bounds write access in array: " + id + "[" + str(offset) + "]"
+                raise jsbachExceptions(msg)
+            array[offset-1] = value
+            Scope[id] = array
         else:
-            Scope = self.SymbolTable[self.actualScope]
-            if offset != -1:
-                array = Scope[id]
-                if offset < 1 or offset > len(array):
-                    msg = "Out of bounds write access in array: " + id + "[" + str(offset) + "]"
-                    raise jsbachExceptions(msg)
+            Scope[id] = value
+        self.SymbolTable[self.actualScope] = Scope
 
-                array[offset-1] = value
-                Scope[id] = array
-            else:
-                Scope[id] = value
-            self.SymbolTable[self.actualScope] = Scope
+    def visitSetKeySignature(self, ctx):
+        self.key = ctx.KEYSIGS().getText()
+
+    def visitSetTempo(self, ctx):
+        self.tempo = int(ctx.INTVAL().getText())
+
+    def visitSetCompasTime(self, ctx):
+        self.compas = ctx.CMPTIME().getText()
 
     def visitIfStmt(self, ctx):
         chd = list(ctx.getChildren())
@@ -197,6 +196,8 @@ class TreeVisitor(jsbachVisitor):
     def decodeNote(self, note):
         accidental = ""
         tempo = ""
+
+        # La nota te un tempo concret
         if note >= 52*8:
             note -= 52*8
             tempo = "16"
@@ -213,6 +214,7 @@ class TreeVisitor(jsbachVisitor):
             note -= 52
             tempo = "1"
 
+        # La nota te un accidental
         if isinstance(note, float):
             acc = note % 1
             # Tenim un bemol en la nota
@@ -282,8 +284,8 @@ class TreeVisitor(jsbachVisitor):
         id = ctx.varident().VARID().getText()
         array = self.visit(ctx.varident())
         offset = self.visit(ctx.expr())
-        if offset-1 < 0 or offset-1 >= len(array):
-            msg = "Out of bounds delete index in array: " + id + "[" + str(offset) + "]"
+        if offset < 1 or offset > len(array):
+            msg = "Out of bounds delete index in array with size " + str(len(array)) + ": " + id + "[" + str(offset) + "]"
             raise jsbachExceptions(msg)
         del array[offset-1]
         Scope = self.SymbolTable[self.actualScope]
@@ -308,13 +310,12 @@ class TreeVisitor(jsbachVisitor):
 
     def visitArrayReadAccess(self, ctx):
         array = self.visit(ctx.varident())
+        arrayId = ctx.varident().VARID().getText();
         offset = self.visit(ctx.expr())
         if not isinstance(offset, int):
-            raise jsbachExceptions("Non integer index (" + str(offset) +") in array access " + array)
+            raise jsbachExceptions("Non integer index in array access: " + arrayId + "[" + str(offset) + "]")
         if offset < 1 or offset > len(array):
-            arrayId = ctx.varident().VARID().getText();
-            msg = "Out of bounds read access in array: " + arrayId + "[" + str(offset) + "]"
-            raise jsbachExceptions(msg)
+            raise jsbachExceptions("Out of bounds read access in array with size " + str(len(array)) + ": " + arrayId + "[" + str(offset) + "]")
         return array[offset-1]
 
     def visitArithmetic(self, ctx):
@@ -326,11 +327,11 @@ class TreeVisitor(jsbachVisitor):
             return val1 * val2
         elif op == "DIV":
             if val2 == 0:
-                raise jsbachExceptions("Attempt to divide by zero")
+                raise jsbachExceptions("Attempt to divide by zero in division operation")
             return val1 // val2
         elif op == "MOD":
             if val2 == 0:
-                raise jsbachExceptions("Attempt to divide by zero")
+                raise jsbachExceptions("Attempt to divide by zero in modulus operation")
             return val1 % val2
         elif op == "PLUS":
             return val1 + val2
@@ -357,6 +358,8 @@ class TreeVisitor(jsbachVisitor):
 
     def visitListsSize(self, ctx):
         id = self.visit(ctx.varident())
+        if not isinstance(id, list):
+            raise jsbachExceptions("Identifier " + id + " is not a list")
         return len(id)
 
     def visitBoolean(self, ctx):
@@ -396,11 +399,7 @@ class TreeVisitor(jsbachVisitor):
 
     def visitValue(self, ctx):
         chd = list(ctx.getChildren())
-        if chd[0].getText() == 'true':
-            return True
-        elif chd[0].getText() == 'false':
-            return False
-        elif '.' in chd[0].getText():
+        if '.' in chd[0].getText():
             return float(chd[0].getText())
         else:
             return int(chd[0].getText())
@@ -480,10 +479,13 @@ class TreeVisitor(jsbachVisitor):
         if id not in Scope:
             Scope[id] = 0
         self.SymbolTable[self.actualScope] = Scope
-        if isinstance(Scope[id], list):
-            return Scope[id]
+        value = Scope[id]
+        if isinstance(value, list):
+            return value
+        elif isinstance(Scope[id], float):
+            return float(value)
         else:
-            return int(Scope[id])
+            return int(value)
 
     # ------------------- PROCIDENT RULE ------------------#
 

@@ -4,7 +4,7 @@ grammar jsbach;
 /// Parser Rules
 //////////////////////////////////////////////////
 
-// A program is a list of functions beginning with a main
+// A program is a list of procedures followed by and End Of Line
 program : procedures EOF
         ;
 
@@ -12,7 +12,7 @@ procedures : (procedure)+
            ;
 
 procedure : PROCID parameters BEGINBLOCK statements ENDBLOCK
-         ;
+          ;
 
 parameters : (varident)*
            ;
@@ -30,6 +30,9 @@ writeparams : (paramstring|expr)*
             ;
 
 statement  : left_expr ASSIGN expr                                                           # assignStmt
+           | KEYSIGNATURE ASSIGN KEYSIGS                                                     # setKeySignature
+           | TEMPO ASSIGN INTVAL                                                             # setTempo
+           | COMPASTIME ASSIGN CMPTIME                                                       # setCompasTime
            | IF expr BEGINBLOCK statements ENDBLOCK (ELSE BEGINBLOCK statements ENDBLOCK)?   # ifStmt
            | WHILE expr BEGINBLOCK statements ENDBLOCK                                       # whileStmt
            | procident paramexp?                                                             # procCall
@@ -52,7 +55,7 @@ expr : '(' expr ')'                                                 # parenthesi
      | RANDOM '['expr  expr']'                                      # randomNumber
      | arraytype                                                    # exprArray
      | notes                                                        # exprNotes
-     | (INTVAL|FLOATNUM|BOOLVAL)                                    # value
+     | (INTVAL|FLOATNUM)                                            # value
      | varident                                                     # exprIdent
      ;
 
@@ -80,14 +83,14 @@ varident  : VARID
 
 ASSIGN      : '<-' ;
 
-/*----Aritmetics---*/
+/*----Arithmetics---*/
 PLUS        : '+' ;
 MINUS       : '-' ;
 MUL         : '*';
 DIV         : '/';
 MOD         : '%';
 
-/*----Relacionals---*/
+/*----Relationals---*/
 EQU         : '==' ;
 NEQ         : '/=' ;
 LET         : '<';
@@ -95,53 +98,53 @@ LEQ         : '<=';
 GET         : '>';
 GEQ         : '>=';
 
-/*----Logics---*/
+/*----Booleans---*/
 NOT         : 'not' ;
 AND         : 'and' ;
 OR          : 'or'  ;
 
-/*---Entrada/Sortida--*/
+/*---Input/Output--*/
 WRITE       : '<!>' ;
 READ        : '<?>' ;
 
-/*------Condicional-----*/
+/*------Conditional-----*/
 IF          : 'if' ;
 ELSE        : 'else' ;
 WHILE       : 'while' ;
 
-/*------Delimitadors-----*/
+/*------Delimiters-----*/
 BEGINBLOCK  : '|:' ;
 ENDBLOCK    : ':|' ;
 
-/*------Llistes-----*/
+/*------Lists-----*/
 ADDLIST     : '<<' ;
 CUTLIST     : '8<' ;
 LEN         : '#'  ;
 
 /*-----Notes-----*/
 PLAY        : '<:>' ;
-NOTES       : ('A'..'G') ('0'..'8')? ('#'|'b')? ( ',' ('1'|'2'|'4'|'6'|'8'))?;
+NOTES       : ('A'..'G') ('0'..'8')? ('#'|'b')? (',' ('1'|'2'|'4'|'6'|'8'))?;
 KEYSIGNATURE: '_ksg_';
 TEMPO       : '_tmp_';
 COMPASTIME  : '_ctm_';
 KEYSIGS     : ('A'..'G') ('major' | 'minor') ;
 CMPTIME     : ('2'..'6') '/' ('2'..'6');
 
-/*-----Funcions-----*/
+/*-----Functions-----*/
 RANDOM      : 'random';
 PROCID      : ('A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;             // Function IDs start with a capital letter
 
-/*-----Tipus basics-----*/
-BOOLVAL     : 'true' | 'false' ;
+/*-----Basic Types-----*/
 VARID       : ('a'..'z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')* ;
 INTVAL      : ('0'..'9')+ ;
 FLOATNUM    : ('0'..'9')+ '.' ('0'..'9')+;
 
-STRING    : '"' ( ESC_SEQ | ~('\\'|'"') )* '"' ;
-
+STRING    : '"' ( ESC_SEQ | ~('\\'|'"') )* '"' ;            // A string can be an escape sequence or something
+                                                            // differnt than '' and "
 fragment
 ESC_SEQ   : '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\') ;
 
+/*-----Skiping types-----*/
 COMMENT     : '~~~' ~('\n' | '\r')* '~~~' -> skip ;
 
 WS          : (' ' | '\t' | '\r' | '\n')+ -> skip ;
