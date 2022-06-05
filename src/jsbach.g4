@@ -45,12 +45,12 @@ statement  : left_expr ASSIGN expr                                              
 
 expr : '(' expr ')'                                                 # parenthesis
      | varident '[' expr ']'                                        # arrayReadAccess
-     | op=(NOT|PLUS|MINUS) expr                                     # unary
+     | op=(NICHT|PLUS|MINUS) expr                                   # unary
      | expr op=(MUL|DIV|MOD) expr                                   # arithmetic
      | expr op=(PLUS|MINUS) expr                                    # arithmetic
      | expr op=(EQU|NEQ|LET|LEQ|GET|GEQ) expr                       # relational
-     | expr op=AND expr                                             # boolean
-     | expr op=OR  expr                                             # boolean
+     | expr op=UND expr                                             # boolean
+     | expr op=ODER  expr                                           # boolean
      | LEN varident                                                 # listsSize
      | RANDOM '['expr  expr']'                                      # randomNumber
      | arraytype                                                    # exprArray
@@ -98,10 +98,10 @@ LEQ         : '<=';
 GET         : '>';
 GEQ         : '>=';
 
-/*----Booleans---*/
-NOT         : 'not' ;
-AND         : 'and' ;
-OR          : 'or'  ;
+/*----Logic---*/
+NICHT       : 'nicht' ;
+UND         : 'und' ;
+ODER        : 'oder'  ;
 
 /*---Input/Output--*/
 WRITE       : '<!>' ;

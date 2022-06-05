@@ -105,7 +105,8 @@ class TreeVisitor(jsbachVisitor):
     # ------------------- PARAMSTRING RULE ------------------ #
 
     def visitParamstring(self, ctx):
-        return ctx.STRING().getText()
+        s = ctx.STRING().getText()
+        return s[1:-1]       # per eliminar les cometes al davant i al final
 
     # ------------------- WRITEPARAMS RULE ------------------ #
 
@@ -366,14 +367,14 @@ class TreeVisitor(jsbachVisitor):
         expr1, op, expr2 = ctx.getChildren()
         op = jsbachParser.symbolicNames[op.getSymbol().type]
         val1 = self.visit(expr1)
-        if op == "AND":
-            if not val1:            # Evaluacio lazy de l'AND
+        if op == "UND":
+            if not val1:            # Evaluacio lazy de l'UND
                 return False
             else:
                 val2 = self.visit(expr2)
                 return val1 and val2
         else:
-            if val1:                # Evaluacio lazy de l'OR
+            if val1:                # Evaluacio lazy de l'ODER
                 return True
             else:
                 val2 = self.visit(expr2)
