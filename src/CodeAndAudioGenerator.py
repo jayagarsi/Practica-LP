@@ -1,5 +1,5 @@
 import os
-
+import sys
 
 class CodeAndAudioGenerator():
     def __init__(self, fN, notesS, temp, keyS, compasS):
@@ -42,7 +42,10 @@ class CodeAndAudioGenerator():
     def generatePDFandMidiFiles(self):
         print("----- GENERATING PDF AND MIDI FILES -----")
         lilyPondInstruction = "lilypond " + self.lilyFileName
-        os.system(lilyPondInstruction)
+        ret = os.system(lilyPondInstruction)
+        if ret != 0:
+            print("ERROR: something went wrong compiling the lilypond file, did you write something weird?")
+            sys.exit()
         print("----- SUCCESSFULLY GENERATED PDF AND MIDI FILES ----- \n")
 
     def generateWAVFile(self):
