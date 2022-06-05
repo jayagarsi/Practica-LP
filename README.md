@@ -118,7 +118,7 @@ Tal i com ve especificat en el llenguatge, no hi ha valors booleans però 0 és 
 La següent extensió ha sigut més aviat necessària per poder realitzar sostinguts i bemols, doncs facilita molt la feina. No hi ha molt a dir, la notació és la típica de qualsevol llenguatge, un valor enter seguit d'un punt i un valor fraccionari:
 
 ```
-~~~ prova_extensio_06.jsb
+~~~ Prova Extensio 06 ~~~
 
 Main |:
   a <- 3.0
@@ -135,7 +135,8 @@ El tractament dels floats no és especial, simplement ara en comptes de tractar 
 Per acabar amb les extensions menys musicals, parlaré de la generació de nombres aleatoris que dóna JSBach. Per generar un nombre aleatòri simplement s'ha d'escriure ```random [ini end]```, on ini i end són l'interval en que es genera el nombre. Random és una expressió en JSBach, així que ha d'anar acompanyat d'un statement. Un codi d'exemple el podem veure en el següent:
 
 ```
-~~~ prova_extensio_09.jsb ~~~
+~~~ Prova Extensio 09 ~~~
+
 RandomAssign a |:
     while i <= 50 |:
         val <- random[3 12]
@@ -145,16 +146,18 @@ RandomAssign a |:
     <!> a                   ~~~ genera una llista amb 50 nombres aleatoris entre 3 i 12
 :|
 ```
-Cal destacar que el generador de nombres aleatòris només genera enters no reals, i per tant els intervals també han de ser enters. Per evitar errors doncs, l'intèrpret comprova si els intervals són correctes. Els dos missatges d'error que s'emeten passen quan:
-* Un dels dos límits és un valor real (p.e. \[4.2, 3\])
+Cal destacar que el generador de nombres aleatòris només genera enters, i per tant els intervals també han de ser enters. Per evitar errors doncs, l'intèrpret comprova si els intervals són correctes. Els dos missatges d'error que s'emeten passen quan:
+* Algun dels límits és un valor real (p.e. \[1.2, 3\])
 * Els límits se sobreposen (p.e. \[3, 2\])
+
+La generació del nombre aleatòri en si, l'he fet utilitzant la funció ```randint``` de la llibreria random.
 
 ### Sostinguts i Bemols
 
 Ara, podem començar amb les extensions musicals. La primera implementada és la possibilitat de tocar notes amb accidentals, siguin bemolls o sostinguts. La codificació per aquests m'ha portat bastants problemes, però al final he decidit codificar-ho en la pròpia nota. Aquí és on entren en joc els nombres reals. Abans que res, en la gramàtica les notes amb bemolls les he definit de la següent manera: ```NOTE : ('A'..'G') ('0'..'8')? ('#'|'b')?```. D'aquesta manera, les notes es poden esciure així ```A0# B2b C3```, etc. Com el llenguatge està pensat per músics, he cregut que aquesta era la millor notació. Aquí hi tenim un exemple:
 
 ```
-~~~ prova_extensio_01.jsb ~~~
+~~~ Prova Extensió 01~~~
 
 Main |:
     <!> "Programa per sostinguts i bemols"
@@ -184,6 +187,7 @@ else:
 I alhora de decodificar:
 
 ```python
+...
 if isinstance(note, float):
     acc = note % 1
     # Tenim un bemol en la nota
@@ -197,9 +201,11 @@ if isinstance(note, float):
     else:
         msg = "Non playable note with value " + note
         raise jsbachExceptions(msg)
+...
+
 ```
 
-Com es pot veure, si el valor fraccionari no és ni 0.25 ni 0.75, s'envia un error de que aquella nota no es pot tocar. Per aquesta raó cal anar amb molt de compte alhora de tocar notes posant els seus valors numérics. Per veure amb més detall això es pot anar al codi del TreeVisitor.
+Com es pot veure, si el valor fraccionari no és ni 0.25 ni 0.75, s'envia un error de que aquella nota no es pot tocar. Per aquesta raó cal anar amb molt de compte a l'hora de tocar notes accidentades posant els seus valors numérics. Per veure amb més detall això, es pot anar al codi del TreeVisitor.
 
 ### Canvi de Tempo de la Negra (base)
 
