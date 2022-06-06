@@ -2,7 +2,7 @@
 
 Main |:
     <?> a
-    if a%2 == 0 |:
+    if a%2 = 0 |:
         <!> "P A R E L L" a
     :|
     else |:

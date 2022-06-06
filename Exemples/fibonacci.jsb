@@ -12,8 +12,8 @@ Main |:
 Fibonacci n |:
     a <- 0
     b <- 1
-    if n == 0   |: <!> a :|
-    if n == 1   |: <!> b :|
+    if n = 0   |: <!> a :|
+    if n = 1   |: <!> b :|
     else |:
         i <- 2
         while i <= n+1 |:

@@ -29,11 +29,11 @@ Pour cubellDesti cubellOrigen d |:
 
         if cOrig /= d and cDest /= d |:
 
-            if cOrig == 0 |:
+            if cOrig = 0 |:
                 cOrig <- cubellOrigen
                 pas <- pas + 1
             :|
-            if cDest == cubellDesti |:
+            if cDest = cubellDesti |:
                 cDest <- 0
                 pas <- pas +1 
             :|

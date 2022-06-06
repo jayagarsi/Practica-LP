@@ -88,7 +88,7 @@ DIV         : '/';
 MOD         : '%';
 
 /*----Relationals---*/
-EQU         : '==' ;
+EQU         : '=' ;
 NEQ         : '/=' ;
 LET         : '<';
 LEQ         : '<=';
