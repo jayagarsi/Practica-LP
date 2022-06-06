@@ -21,7 +21,7 @@ Abans d'entrar en l'explicació de la gramàtica i dels visitadors de l'arbre ca
 
 ### TreeVisitor
 
-Principal classe on hi han tots els visitadors. Hereda de la classe que ANTLR genera que es diu jsbachVisitor.py, per a poder re-implementar els visitors que calgui. Els que no s'han reimplementat és perquè la implementació donada ja val i per no repetir codi.
+Principal classe on hi han tots els visitadors. Hereda de la classe que ANTLR genera que es diu jsbachVisitor.py, per a poder re-implementar els visitors que calgui. Els que no s'han reimplementat és perquè la implementació donada ja val.
 
 ### jsbachExceptions
 
@@ -68,7 +68,26 @@ parser.addErrorListener(MyErrorListener())
 ```
 ### CodeAndAudioGenerator
 
-La última classe auxiliar que he creat és la que genera el codi en lilypond, amb el qual ja es podrà generar la partitura en pdf i la seva interpretació en wav i mp3.
+La última classe auxiliar que he creat és la que genera el codi en lilypond, amb el qual ja es podrà generar la partitura en pdf i la seva interpretació en wav i mp3. Per separar entre la generació de codi i el visitor en sí, he fet que el TreeVisitor desi en un string totes les notes que han de ser tocades. D'aquesta manera, primer es parseja tot el programa, s'interpreta i un cop ha acabat, se li passa aquest string al CodeAndAudioGenerator que escriurà el fitxer lilypond amb el que calgui. Si no s'ha tocat cap nota, no es generarà cap fitxer lilypond. Com la pràctica també incorpora extensions, aquesta classe rep més coses a part de les notes a tocar, com el tempo de la negra, l'armadura, etc. No ho he mencionat, però la classe TreeVisito té métodes per poder obtenir tots aquests strings necessaris per generar el codi.
+
+```python
+visitor.visit(tree)
+notesString = visitor.getNotesString()
+if notesString == "":
+    print("Not generating any midi, wav or mp3 file as there is no song to play")
+else:
+    fileName = os.path.basename(programName)
+    n = len(fileName) - 4
+    fileName = fileName[0:n]
+
+    tempo = visitor.getNotesTempo()
+    key = visitor.getKeySignature()
+    compas = visitor.getCompasTime()
+
+    codeGen = CodeAndAudioGenerator(fileName, notesString, tempo, key, compas)
+    codeGen.executeFileCreation()
+
+```
 
 ## Gramàtica de JSBach
 
@@ -121,14 +140,14 @@ La següent extensió ha sigut més aviat necessària per poder realitzar sostin
 ~~~ Prova Extensio 06 ~~~
 
 Main |:
-  a <- 3.0
-  b <- 5.4
-  <!> a+b           ~~~ la sortida es 8.4 ~~~
+  a <- 3.43
+  b <- 5.11
+  <!> a+b           ~~~ la sortida es 8.54 ~~~
 :|
 
 ```
 
-El tractament dels floats no és especial, simplement ara en comptes de tractar tots els valors com enters, s'ha de comprovar si el valor és un float i fer el cast implícit en cas que faci falta. Cal destacar que valors com 3.0 poden ser escrits però es tractaran com a floats igualment (tal i com fa Python).
+El tractament dels floats no és especial, ara en comptes de tractar tots els valors com enters, s'ha de comprovar si el valor és un float, és a dir si té el mot conté un punt, i fer el cast implícit en cas que faci falta. Cal destacar que valors com 3.0 poden ser escrits però es tractaran com a floats igualment (tal i com fa Python).
 
 ### Nombres aleatòris
 
@@ -143,18 +162,18 @@ RandomAssign a |:
         a << val
         i <- i+1
     :|
-    <!> a                   ~~~ genera una llista amb 50 nombres aleatoris entre 3 i 12
+    <!> a                   ~~~ genera una llista amb 50 nombres aleatoris entre 3 i 12 ~~~
 :|
 ```
 Cal destacar que el generador de nombres aleatòris només genera enters, i per tant els intervals també han de ser enters. Per evitar errors doncs, l'intèrpret comprova si els intervals són correctes. Els dos missatges d'error que s'emeten passen quan:
 * Algun dels límits és un valor real (p.e. \[1.2, 3\])
 * Els límits se sobreposen (p.e. \[3, 2\])
 
-La generació del nombre aleatòri en si, l'he fet utilitzant la funció ```randint``` de la llibreria random.
+La generació del nombre aleatòri en si, l'he fet utilitzant la funció ```randint``` de la llibreria random de Python.
 
 ### Sostinguts i Bemols
 
-Ara, podem començar amb les extensions musicals. La primera implementada és la possibilitat de tocar notes amb accidentals, siguin bemolls o sostinguts. La codificació per aquests m'ha portat bastants problemes, però al final he decidit codificar-ho en la pròpia nota. Aquí és on entren en joc els nombres reals. Abans que res, en la gramàtica les notes amb bemolls les he definit de la següent manera: ```NOTE : ('A'..'G') ('0'..'8')? ('#'|'b')?```. D'aquesta manera, les notes es poden esciure així ```A0# B2b C3```, etc. Com el llenguatge està pensat per músics, he cregut que aquesta era la millor notació. Aquí hi tenim un exemple:
+Ara, podem començar amb les extensions musicals. La primera implementada és la possibilitat de tocar notes amb accidentals, siguin bemolls o sostinguts. La codificació per aquests m'ha portat bastants problemes, però al final he decidit codificar-ho en la pròpia nota. Aquí és on entren en joc els nombres reals. Abans que res, per escriure accidentals la nota ara anirà seguida d'un ```#``` o ```b```. D'aquesta manera, les notes es poden esciure així ```A0# B2b C3```, etc. Si la nota no va seguida de res s'assumeix que és natural. Com el llenguatge està pensat per músics, he cregut que aquesta era la millor notació. Aquí hi tenim un exemple:
 
 ```
 ~~~ Prova Extensió 01~~~
@@ -167,7 +186,7 @@ Main |:
 :|
 ```
 
-Cal parlar també una mica de la codificació. Com els accidentals estan codificats en la pròpia nota, cal donar un valor nou a cada nota quan tinguem un sostingut o un bemoll. Per evitar complicacions, he seguit la següent notació:
+Cal parlar una mica de la codificació amb més profunditat. Com els accidentals estan codificats en la pròpia nota, cal donar un valor nou a cada nota quan tinguem un sostingut o un bemoll. Per evitar complicacions, he seguit la següent notació:
 * Si la nota té valor real i la part fraccional val 0.25 --> tenim un bemol
 * Si la nota té valor real i la part fraccional val 0.75 --> tenim un sostingut
 Aquesta notació és poc intuitiva, sobretot pels músics, però facilita molt la feina per part del compilador. D'aquesta manera al codificar la nota només cal fer el següent:
@@ -177,14 +196,14 @@ Aquesta notació és poc intuitiva, sobretot pels músics, però facilita molt l
 accidentalToValue = {"#": 0.75, "b": 0.25}
 ...
 if note[1] != "#" and note[1] != "b":
-    offset = (int(note[1])-1)*7+2
+    offset = (int(note[1])-1)*7+2               # codificació normal d'una nota
 else:
     acc = note[1]
-    offset = 3*7+2 + accidentalToValue[acc]
+    offset = 3*7+2 + accidentalToValue[acc]     # a la nota li afegim el valor accidental que correspongui
 ...
 ```
 
-I alhora de decodificar:
+I a l'hora de decodificar:
 
 ```python
 ...
@@ -205,13 +224,109 @@ if isinstance(note, float):
 
 ```
 
-Com es pot veure, si el valor fraccionari no és ni 0.25 ni 0.75, s'envia un error de que aquella nota no es pot tocar. Per aquesta raó cal anar amb molt de compte a l'hora de tocar notes accidentades posant els seus valors numérics. Per veure amb més detall això, es pot anar al codi del TreeVisitor.
+Com es pot veure, si el valor fraccionari no és ni 0.25 ni 0.75, s'envia un error de que aquella nota no es pot tocar. Per aquesta raó cal anar amb molt de compte a l'hora de tocar notes accidentades posant els seus valors numérics. La meva recomanació és deixar la feina bruta al compilador i escriure les notes amb la notació donada.
 
 ### Canvi de Tempo de la Negra (base)
 
+Un altra extensió afegida important pels músics, és la possibilitat de canviar el tempo base de la negra. D'aquesta manera es pot canviar el ritme de tota la partitura de manera bastant fàcil. Per poder canviar el ritme, en el llenguatge s'haurà d'escriure ```_tmp_ <- val```. És a dir que per canviar el ritme de la partitura simplement s'ha de fer una assignació normal però a una variable especial. He escollit dir-li així per separar el que poden ser identificadors d'aquesta variable especial. L'assignació es pot fer varies vegades en el codi, però només es pot quedar amb una i aquesta serà l'última que es faci. Per canviar el tempo en el lilypond el que s'ha de fer és afegir el següet dins de la part de l'absolute:
+
+```
+...
+\tempo 4 = val
+...
+```
+On 4 és el temps de la negra i val el ritme que se li assigni. Per defecte és 120. A més a més, es llençarà un error quan el ritme assignat tingui valor 0 o negatiu, doncs no té cap sentit musicalment. Sintàcticament es força que el valor assignat a ```_tmp_``` sigui un valor numéric, és a dir que no se li pot assignar una expressió, per evitar errors.
+
+
+Per un exemple en JSBach:
+
+```
+~~~ Prova extensio 06 ~~~
+
+Main |:
+    _tmp_ <- 160
+    <:> {C2 A3# B5b}
+    <!> "Ritme val 160"
+:|
+
+```
+
 ### Canvi de Tempo d'una Nota
 
+Ara ve un altra extensió que també ha portat bastant temps, però que per generar partitures és imprescindible. JSBach també permet canviar el ritme de cada nota personalment. És a dir que ara podem definir rodones, blanques, negres, corxeres i semicorxeres. M'ha portat molt temps pensar la representació adequada i fàcil de manejar i al final he decidit codificar-ho en la pròpia nota també. Ara, a més de l'accidental i la octava, podem definir el ritme de la nota de la següent manera: ``` A0#,4 B,1 C4b,2```. És a dir, que afegin una coma i un nombre ara canviarem el ritme de la nota. En lilypond, per declarar el tempo que té una nota simplement s'ha d'afegir un valor númeric al final d'aquesta (p.e. a'16 en lilypond seria la nota A4,8 en JSBach). El ritme i les notes es corresponen de la següent manera:
+
+| ***Ritme***          | Rodona | Blanca | Negra | Corxera | Semicorxera |
+|----------------------|--------|--------|-------|---------|-------------|
+| ***Valor JSBach***   | 1      | 2      | 4     | 6       | 8           |
+| ***Valor Lilypond*** | 1      | 2      | 4     | 8       | 16          |
+
+D'aquesta manera amb la pròpia nota ja podem definir el tempo que tindrà, sense afegir res més. Per altra banda, la codificació de la nota es complica més. Per facilitar-ho, he decidit generar "nous" intervals, per les notes amb tempo. És a dir, les notes que siguin rodones en comptes de codificar-se de 0 a 52 es codificaran de 53 a 105. De manera general, per cada ritme el que faig és sumar-li 52+1 multiplicat pel tempo que tinguem, d'aquesta manera genero els "nous" intervals per cada ritme diferent. Abans d'entrar en la implementació, un exemple en JSBach seria el següent:
+
+```
+~~~ Prova Extensio 07 ~~~
+Main |:
+  a <- {A,8 B,8 C,8 D4 {A4 B4 C4}}
+  <:> a
+  <:> A4#,6
+:|
+```
+
+En quant a la implementació, el codi per codificar la nota sencera, quan té octava, accidental i tempo, és el següent:
+
+```python
+...
+acc = note[2]
+tmp = note[4]
+offset = (int(note[1])-1)*7+2 + accidentalToValue[acc] + int(tmp)*53
+...
+```
+I per decodificar:
+
+```python
+...
+# La nota te un tempo concret
+if note >= 53*8:
+    note -= 53*8
+    tempo = "16"
+elif note >= 53*6:
+    note -= 53*6
+    tempo = "8"
+elif note >= 53*4:
+    note -= 53*4
+    tempo = "4"
+elif note >= 53*2:
+    note -= 53*2
+    tempo = "2"
+elif note >= 53:
+    note -= 53
+    tempo = "1"
+...
+```
+
 ### Canvi d'Armadura
+
+Una part molt important de les partitures també és el canvi d'armadura, que defineix les notes que han de ser sostingudes, bemoll o naturals. Per poder afegir una armadura, en JSBach s'ha d'escriure el següent ```_ksg_ <- val```. La selecció del nom és per la mateixa raó que en el tempo general de la partitura. En aquest cas, els valors que pot prendre l'armadura són els que segueixen la següent estructura ```('A' .. 'G') ('major'|'minor')```. És a dir podem tenir una nota seguida de major o minor depenent del que volem. En aquesta pàgina de la [wikipedia](https://en.wikipedia.org/wiki/Key_signature), hi ha més informació sobre com va la notació de l'armadura. Així doncs en JSBach:
+
+```
+~~~ Prova Extensio 04 ~~~
+
+Armadura |:
+    _ksg_ <- Amajor
+    _tmp_ <- 160
+    <:> {A4 C5 B4}
+    <!> "Canviada armadura"
+:|
+
+Main |:
+    Armadura
+:|
+
+```
+
+
+
+### Canvi de tempo del compàs
+
 
 ### Acords
 
