@@ -258,11 +258,18 @@ class TreeVisitor(jsbachVisitor):
             self.notesString += "         "
 
     def playChord(self, notes):
+        firstRithm = "4"
+        isFirst = True
         self.notesString += '<'
         for n in notes:
             snote = self.decodeNote(n)
+            if snote[-2].isdigit():
+                if isFirst:
+                    firstRithm = snote[-2]
+                    isFirst = False
+                snote = snote[:-2] + " "
             self.notesString += snote
-        self.notesString += '>4 \n'
+        self.notesString += '> ' + firstRithm +'\n'
 
     def visitPlayStmt(self, ctx):
         notes = self.visit(ctx.expr())

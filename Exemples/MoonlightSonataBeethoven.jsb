@@ -15,24 +15,23 @@ PlayOneProgression a lim |:
 :|
 
 Sonata |:
-  _tmp_ <- 160
+  _tmp_ <- 120
   _ksg_ <- Emajor
-  firstChodr <- <C0 C2 G3>
-  progressio <- {<C0 C2 G3> C4 E4b G3 C4 E4b G3 C4 E4b G3 C4 E4b}
+  progressio <- {{C1,6 C2 G3} C4,6 E4b,6 G3,6 C4,6 E4b,6 G3,6 C4,6 E4b,6 G3,6 C4,6 E4b,6}
   PlayOneProgression progressio 1
 
-  progressio <- {<B0 B1 G3> C4 E4b G3 C4 E4b G3 C4 E4b G3 C4 E4b}
+  progressio <- {{B0 B1,6 G3} C4,6 E4b,6 G3,6 C4,6 E4b,6 G3,6 C4,6 E4b,6 G3,6 C4,6 E4b,6}
   PlayOneProgression progressio 1
 
-  progressio <- {A3b C4 E4b}
+  progressio <- {A3b,6 C4,6 E4b,6}
   PlayOneProgression progressio 2
   
-  progressio <- {A3b D4 F4}
+  progressio <- {A3b,6 D4,6 F4,6}
   PlayOneProgression progressio 2
 
-  progressio <- {G3 B3# F4 G3 C4 E4b}
+  progressio <- {G3,6 B3#,6 F4,6 G3,6 C4,6 E4b,6}
   PlayOneProgression progressio 1
 
-  progressio <- {G3 C4 D4 F3 B3# D4}
+  progressio <- {G3,6 C4,6 D4,6 F3,6 B3#,6 D4,6}
   PlayOneProgression progressio 1
 :|
