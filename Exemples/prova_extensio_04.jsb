@@ -2,7 +2,8 @@
 
 Tempo |:
     _tmp_ <- 60
-    <:> {C4 A4 D5 C6}
+    <:> {C2 A3# B5b}
+    <!> "Ritme val 160"
 :|
 
 Main |:

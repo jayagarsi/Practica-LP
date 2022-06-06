@@ -99,7 +99,10 @@ class TreeVisitor(jsbachVisitor):
             id = self.visit(oneParam)
             Scope = self.SymbolTable[self.actualScope]
             Scope[id] = 0
-            params += [oneParam.getText()]
+            paramID = oneParam.getText()
+            if paramID in params:
+                raise jsbachExceptions("already declared variable '" + paramID + "' as parameter in the same function")
+            params += [paramID]
         return params
 
     # ------------------- PARAMSTRING RULE ------------------ #
@@ -140,7 +143,7 @@ class TreeVisitor(jsbachVisitor):
         tmp = int(ctx.INTVAL().getText())
         if tmp < 1:
             raise jsbachExceptions("incorrect value for tempo: " + tmp)
-        self.tempo = int(ctx.INTVAL().getText())
+        self.tempo = tmp
 
     def visitSetCompasTime(self, ctx):
         self.compas = ctx.CMPTIME().getText()

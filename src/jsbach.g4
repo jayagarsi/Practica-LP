@@ -60,9 +60,6 @@ expr : '(' expr ')'                                                 # parenthesi
      ;
 
 left_expr : VARID ('[' expr ']')?
-          | KEYSIGNATURE
-          | TEMPO
-          | COMPASTIME
           ;
 
 arraytype : '{' (expr)* '}'
