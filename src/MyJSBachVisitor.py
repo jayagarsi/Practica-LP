@@ -137,6 +137,9 @@ class TreeVisitor(jsbachVisitor):
         self.key = ctx.KEYSIGS().getText()
 
     def visitSetTempo(self, ctx):
+        tmp = int(ctx.INTVAL().getText())
+        if tmp < 1:
+            raise jsbachExceptions("incorrect value for tempo: " + tmp)
         self.tempo = int(ctx.INTVAL().getText())
 
     def visitSetCompasTime(self, ctx):
@@ -158,11 +161,8 @@ class TreeVisitor(jsbachVisitor):
             expr = self.visit(ctx.expr())
 
     def visitParamexp(self, ctx):
-        params = []
         exprs = list(ctx.getChildren())
-        for oneExpr in exprs:
-            e = self.visit(oneExpr)
-            params.append(e)
+        params = [self.visit(oneExpr) for oneExpr in exprs]
         return params
 
     def visitProcCall(self, ctx):
@@ -199,20 +199,20 @@ class TreeVisitor(jsbachVisitor):
         tempo = ""
 
         # La nota te un tempo concret
-        if note >= 52*8:
-            note -= 52*8
+        if note >= 53*8:
+            note -= 53*8
             tempo = "16"
-        elif note >= 52*6:
-            note -= 52*6
+        elif note >= 53*6:
+            note -= 53*6
             tempo = "8"
-        elif note >= 52*4:
-            note -= 52*4
+        elif note >= 53*4:
+            note -= 53*4
             tempo = "4"
-        elif note >= 52*2:
-            note -= 52*2
+        elif note >= 53*2:
+            note -= 53*2
             tempo = "2"
-        elif note >= 52:
-            note -= 52
+        elif note >= 53:
+            note -= 53
             tempo = "1"
 
         # La nota te un accidental
@@ -445,20 +445,20 @@ class TreeVisitor(jsbachVisitor):
 
         elif len(note) == 3:
             if note[1] == ',':
-                offset = 3*7+2 + int(note[2])*52
+                offset = 3*7+2 + int(note[2])*53
             else:
                 acc = note[2]
                 offset = (int(note[1])-1)*7+2 + accidentalToValue[acc]
         elif len(note) == 4:
             tmp = note[3]
             if note[1] != "#" and note[1] != "b":
-                offset = (int(note[1])-1)*7+2 + int(tmp)*52
+                offset = (int(note[1])-1)*7+2 + int(tmp)*53
             else:
-                offset = 3*7+2 + int(tmp)*52
+                offset = 3*7+2 + int(tmp)*53
         else:
             acc = note[2]
             tmp = note[4]
-            offset = (int(note[1])-1)*7+2 + accidentalToValue[acc] + int(tmp)*52
+            offset = (int(note[1])-1)*7+2 + accidentalToValue[acc] + int(tmp)*53
         return notesToValues[val]+offset
 
     def visitNotes(self, ctx):

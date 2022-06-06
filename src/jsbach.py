@@ -19,7 +19,7 @@ def main():
         for i in range(len(firstFunctionParams)):
             firstFunctionParams[i] = int(firstFunctionParams[i])
 
-        input_stream = FileStream(sys.argv[1])
+        input_stream = FileStream(sys.argv[1], encoding='utf-8')
 
         lexer = jsbachLexer(input_stream)
         lexer.addErrorListener(jsbachErrorListener())

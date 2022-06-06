@@ -132,10 +132,10 @@ CMPTIME     : ('2'..'6') '/' ('2'..'6');
 
 /*-----Functions-----*/
 RANDOM      : 'random';
-PROCID      : ('A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;             // Function IDs start with a capital letter
+PROCID      : [A-Z\u0080-\u00FF] [0-9a-zA-Z\u0080-\u00FF_]*;             // Function IDs start with a capital letter
 
 /*-----Basic Types-----*/
-VARID       : ('a'..'z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')* ;
+VARID       : [a-z\u0080-\u00FF] [0-9a-zA-Z\u0080-\u00FF_]*;            // Variable IDs start with a lower letter
 INTVAL      : ('0'..'9')+ ;
 FLOATNUM    : ('0'..'9')+ '.' ('0'..'9')+;
 
