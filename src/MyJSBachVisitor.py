@@ -369,8 +369,6 @@ class TreeVisitor(jsbachVisitor):
 
     def visitListsSize(self, ctx):
         id = self.visit(ctx.varident())
-        if not isinstance(id, list):
-            raise jsbachExceptions("Identifier " + id + " is not a list")
         return len(id)
 
     def visitBoolean(self, ctx):
@@ -441,7 +439,6 @@ class TreeVisitor(jsbachVisitor):
         notesToValues = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
         accidentalToValue = {"#": 0.75, "b": 0.25}
         val = note[0]
-        prod = 1
         offset = 0
 
         if len(note) == 1:      # si no hi ha nombre correspone al 4

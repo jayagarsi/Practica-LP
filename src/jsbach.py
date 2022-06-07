@@ -7,6 +7,14 @@ def main():
         print("Usage: python3 jsbach.py program.jsb [functionname] [parameters]")
     else:
         programName = sys.argv[1]
+        fileName = os.path.basename(programName)
+        n = len(fileName) - 4
+        extension = fileName[-3:]
+        if extension != "jsb":
+            print("ERROR: expecting file with .jsb extention and recieved ." + extension)
+            sys.exit()
+        fileName = fileName[0:n]
+
         firstFunctionName = "Main"
         firstFunctionParams = []
         if len(sys.argv) == 3:
@@ -36,10 +44,6 @@ def main():
             if notesString == "":
                 print("Not generating any midi, wav or mp3 file as there is no song to play")
             else:
-                fileName = os.path.basename(programName)
-                n = len(fileName) - 4
-                fileName = fileName[0:n]
-
                 tempo = visitor.getNotesTempo()
                 key = visitor.getKeySignature()
                 compas = visitor.getCompasTime()
