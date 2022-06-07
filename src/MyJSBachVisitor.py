@@ -201,6 +201,8 @@ class TreeVisitor(jsbachVisitor):
         self.visit(ctx.writeparams())
 
     def decodeNote(self, note):
+        if note > 53*8+52:
+            raise jsbachExceptions("the number " + str(note) + " is not a playable note")
         accidental = ""
         tempo = ""
 
