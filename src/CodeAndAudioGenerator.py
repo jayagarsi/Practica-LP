@@ -1,6 +1,7 @@
 import os
 import sys
 
+
 class CodeAndAudioGenerator():
     def __init__(self, fN, notesS, temp, keyS, compasS):
         self.fileName = fN
@@ -25,12 +26,12 @@ class CodeAndAudioGenerator():
             compasS = "        \\time " + self.compas + "\n"
 
         file_object = open(self.lilyFileName, 'w')
-        s =  "\\version \"2.20.0\" \n"
+        s = "\\version \"2.20.0\" \n"
         s += "\\score {\n"
         s += "   \\absolute { \n"
         s += "        \\tempo 4 = " + self.tempo + "\n"
-        s +=  keyS
-        s +=  compasS
+        s += keyS
+        s += compasS
         s += "         " + self.notesString + "\n"
         s += "   } \n"
         s += "   \\layout { } \n"

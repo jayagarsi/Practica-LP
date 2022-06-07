@@ -13,15 +13,18 @@ class jsbachErrorListener(ErrorListener):
         print("ERROR: there are some syntactical or lexical errors")
         sys.exit()
 
+
 class jsbachExceptions(Exception):
     def __init__(self, message):
         self.message = "ERROR: " + message
+
 
 class jsbachFunctionInfo():
     def __init__(self, name, params, context):
         self.name = name
         self.params = params
         self.context = context
+
 
 class TreeVisitor(jsbachVisitor):
     def __init__(self, firstFunctionName="", firstFunctionParams=[]):
@@ -230,9 +233,8 @@ class TreeVisitor(jsbachVisitor):
                 note -= 0.75
                 accidental = 'is'
             else:
-                msg = "Non playable note with value " + note
-                raise jsbachExceptions(msg)
-        
+                raise jsbachExceptions("Non playable note with value " + note)
+
         val = (int(note)-2) % 7
         valuesToNotes = {0: "c", 1: "d", 2: "e", 3: "f", 4: "g", 5: "a", 6: "b"}
         toneToValue = {1: ",,", 2: ",", 3: "", 4: "'", 5: "''", 6: "'''", 7: "''''", 8: "'''''"}
@@ -263,13 +265,13 @@ class TreeVisitor(jsbachVisitor):
         self.notesString += '<'
         for n in notes:
             snote = self.decodeNote(n)
-            if snote[-2].isdigit():
-                if isFirst:
+            if snote[-2].isdigit():             # protocol d'agafar el ritme de la primera nota
+                if isFirst:                     # que tingui ritme
                     firstRithm = snote[-2]
                     isFirst = False
                 snote = snote[:-2] + " "
             self.notesString += snote
-        self.notesString += '> ' + firstRithm +'\n'
+        self.notesString += '> ' + firstRithm + '\n'
 
     def visitPlayStmt(self, ctx):
         notes = self.visit(ctx.expr())
@@ -321,7 +323,7 @@ class TreeVisitor(jsbachVisitor):
 
     def visitArrayReadAccess(self, ctx):
         array = self.visit(ctx.varident())
-        arrayId = ctx.varident().VARID().getText();
+        arrayId = ctx.varident().VARID().getText()
         offset = self.visit(ctx.expr())
         if not isinstance(offset, int):
             raise jsbachExceptions("Non integer index in array access: " + arrayId + "[" + str(offset) + "]")
