@@ -1,17 +1,12 @@
-~~~ Algorisme per saber si un nombre es primer ~~~
-~~~    basat en el Petit Teorema de Fermat     ~~~
+~~~ Algorisme de MonteCarlo per saber si un nombre es primer ~~~
+~~~         basat en el Petit Teorema de Fermat              ~~~
 
-PlaySomeNote a |:
-    ~~~ per tocar algunes notes aleatories amb accidentals ~~~
-    dec <- 0
-    randdec <- random[1 20]
-    if randdec = 1 |:
-        dec <- 0.25
-    :|
-    if randdec = 2 |:
-        dec <- 0.75
-    :|
-    <:> a % 30 + 10 + dec              ~~~ asseguro que sigui una nota tocable ~~~
+Main |:
+    <!> "Introdueix un nombre"
+    <?> n
+    <!> "Introdueix el nombre de vegades a repetir l'experiment"
+    <?> k
+    IsPrime n k
 :|
 
 IsPrime n k |:
@@ -30,9 +25,9 @@ IsPrime n k |:
 
         while i < k |:
             a <- random[2 n-2]
-            i <- i+1
             
             ~~~ Calcul de a^(n-1) % n ~~~
+
             res <- 1
             exp <- n-1
             p <- n
@@ -49,27 +44,35 @@ IsPrime n k |:
                 :|
             :|
             res <- res%n
-            ~~~                     ~~~
+
+            ~~~ Fi calcul exponenciacio modular ~~~
 
             if res /= 1 |:
-                i <- k+1    ~~~ simulo la sortida de la funcio ~~~
+                i <- k    ~~~ simulo la sortida de la funcio ~~~
                 noEsPrimer <- 1
             :|
+            i <- i+1
         :|
+
         if noEsPrimer |:
             <!> "El nombre no es primer"
         :|
+        
         else |:
             <!> "El nombre possiblement es primer"
         :|
     :|
-
 :|
 
-Main |:
-    <!> "Introdueix un nombre"
-    <?> n
-    <!> "Introdueix el nombre de vegades a repetir l'experiment"
-    <?> k
-    IsPrime n k
+PlaySomeNote a |:
+    ~~~ per tocar algunes notes aleatories amb accidentals ~~~
+    dec <- 0
+    randdec <- random[1 20]
+    if randdec = 1 |:
+        dec <- 0.25
+    :|
+    if randdec = 2 |:
+        dec <- 0.75
+    :|
+    <:> a % 30 + 10 + dec              ~~~ asseguro que sigui una nota tocable ~~~
 :|
