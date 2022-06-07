@@ -6,7 +6,7 @@ InsertionSort a |:
         temp <- a[i]
         j <- i-1
         
-        while j > 0 and temp <= a[j] |:
+        while j > 0 und temp <= a[j] |:
             a[j+1] <- a[j]
             j <- j-1
             <:> j*2
