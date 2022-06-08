@@ -1,6 +1,6 @@
 # Doble Intèrpret pel llenguatge musical JSBach
 
-Aquest repositori mostra la resolució de la Pràctica de LP del curs 2021-2022 Q2, on s'implementa un doble intèrpret pel llenguatge de programació JSBach. En aquesta pàgina només mencionaré les parts tècniques de la implementació i les extensions realitzades, l'especificació bàsica del llenguatge es pot trobar en el directori [Enunciat](https://github.com/jayagarsi/Practica-LP/tree/master/Enunciat). La doble interpretació ve de primer interpretar el llenguatge JSBach i després generar codi en llenguatge [lillypond](https://lilypond.org/).
+Aquest repositori mostra la resolució de la Pràctica de LP del curs 2021-2022 Q2, on s'implementa un doble intèrpret pel llenguatge de programació JSBach. En aquest document només parlaré de les parts tècniques de la implementació i les extensions realitzades. En el repositori s'hi pot trobar l'especificació bàsica del llenguatge en el directori [Enunciat](https://github.com/jayagarsi/Practica-LP/tree/master/Enunciat), una àmplia varietat de jocs de prova i exemples de codi en el directori [Exemples](https://github.com/jayagarsi/Practica-LP/tree/master/Exemples) i el codi font en la carpeta [src](https://github.com/jayagarsi/Practica-LP/tree/master/Exemples).
 
 ## Execució de l'Interpret
 
@@ -9,7 +9,7 @@ Per cridar l'intèrpret, cal cridar a python de la següent manera:
 ```bash
 python3 jsbach.py fitxer.jsb [nomfuncio] [parametres]
 ```
-On jsbach.py és l'intèrpret del llenguatge, generat amb la comanda `antlr4 -Dlanguage=Python3 -no-listener -visitor $(grammar).g4` d'ANTLR. Per aquesta raó, per poder executar l'intèrpret cal tenir instal·lat python i ANTLR (aquest últim no fa falta doncs en el directori lib ja estan tots els fitxers necessaris per executar-lo, només seria necessari si es fes algún canvi en la gramàtica). La comanda té 3 paràmetres (a part de l'intèrpret i python3):
+On jsbach.py és l'intèrpret del llenguatge, generat amb la comanda `antlr4 -Dlanguage=Python3 -no-listener -visitor $(grammar).g4` d'ANTLR. Per aquesta raó, per poder executar l'intèrpret cal tenir instal·lat python i ANTLR. Per facilitar la feina, en el directori src, també hi ha un Makefile que permet compilar la gramàtica amb `make`, eliminar tots els fitxers que generi amb `make clean` i eliminar tots els fitxers relacionats amb música amb `make cleanMusica`. L'intèrpret rep 3 paràmetres:
 
 * **Nom del Fitxer**: tot i ser un llenguatge interpretat, l'intèrpret no permet execució interactiva, només llegeix programes de fitxers i cal que aquests tinguin l'extensió jsb. Aquest paràmetre és obligatori.
 * **Nomfuncio**: opcional, serveix per donar el nom de la primera funció que es vol executar. Si no es posa cap s'executa per defecte el Main (si n'hi ha)
@@ -21,11 +21,11 @@ Abans d'entrar en l'explicació de la gramàtica i dels visitadors de l'arbre ca
 
 ### TreeVisitor
 
-Principal classe on hi han tots els visitadors. Hereda de la classe jsbachVisitor, que ANTLR genera, per a poder re-implementar els visitors que calgui. Els que no s'han reimplementat és perquè la implementació donada ja val.
+Principal classe on hi han tots els visitadors. Hereda de la classe jsbachVisitor, que ANTLR genera, per a poder reimplementar els visitors que calgui. Els que no s'han reimplementat és perquè la implementació donada ja val.
 
 ### jsbachExceptions
 
-Classe utilitzada per generar les meves pròpies excepcions quan es troba algún error en temps d'execució. Aquesta simplement genera el missatge "ERROR" més el missatge que se li passi per paràmetre des del visitor. Hereda de la classe Exception, i com a tal, al rebre qualsevol error s'abortarà l'execució. Com és un intèrpret aquest comportament ja és l'esperat.
+Classe utilitzada per generar les meves pròpies excepcions quan es troba algún error en temps d'execució. Aquesta simplement genera el missatge "ERROR" més el missatge que se li passi per paràmetre des del visitor. Hereda de la classe Exception, i com a tal, al rebre qualsevol excepció s'abortarà l'execució.
 
 ```python
 class jsbachExceptions(Exception):
@@ -59,7 +59,7 @@ Per terminar l'execució al script principal l'únic que cal afegir són les com
 
 ### CodeAndAudioGenerator
 
-L'última classe auxiliar que he creat és la que genera el codi en lilypond, amb el qual ja es podrà generar la partitura en pdf i la seva interpretació en wav i mp3. Per separar entre la generació de codi i el visitor en sí, he fet que el TreeVisitor desi en un string totes les notes que han de ser tocades. D'aquesta manera, primer es parseja tot el programa, s'interpreta i un cop ha acabat, se li passa aquest string al CodeAndAudioGenerator que escriurà el fitxer lilypond amb el que calgui. Si no s'ha tocat cap nota, no es generarà cap fitxer lilypond. Com la pràctica també incorpora extensions, aquesta classe rep més coses a part de les notes a tocar, com el tempo de la negra, l'armadura, etc. Per poder obtenir tots els atributs del TreeVisitor, aquesta té uns métodes per obtenir-los. Aquests tampoc són necessaris però penso que ajuden a mantenir la modularitat.
+L'última classe auxiliar que he creat, és la que genera el codi en lilypond, amb el qual ja es podrà generar la partitura en pdf i la seva interpretació en wav i mp3. Per separar entre la generació de codi i el visitor en sí, he fet que el TreeVisitor desi en un string totes les notes que han de ser tocades. D'aquesta manera, primer es parseja i s'interpreta tot el programa i un cop ha acabat, se li passa aquest string al CodeAndAudioGenerator, que escriurà el fitxer lilypond amb el que calgui. Si no s'ha tocat cap nota, no es generarà cap fitxer. Com la pràctica també incorpora extensions, aquesta classe rep més coses a part de les notes a tocar, com el tempo de la negra, l'armadura, etc. Per poder obtenir tots els atributs del TreeVisitor, aquesta té uns métodes per obtenir-los. Aquests tampoc són necessaris però penso que ajuden a mantenir la modularitat.
 
 ```python
 visitor.visit(tree)
@@ -81,15 +81,15 @@ else:
 
 ## Gramàtica de JSBach
 
-La gramàtica pel llenguatge segueix la mateixa estructura que la proposada en l'enunciat, a diferència de les extensions fetes de les que parlaré més endavant. Aquesta es divideix bàsicament en 4 blocs diferents: regles pels procediments, regles per les instruccions, regles per les expressions i tokens del llenguatge. Per mirar de reduïr l'extensió dels visitadors de l'arbre de sintaxis abstracte, he fet la gramàtica modular, generant noves regles per relegar i reduir la quantitat de feina per visitador. La gramàtica es pot consultar [aquí](https://github.com/jayagarsi/Practica-LP/tree/master/src/jsbach.g4).
+La gramàtica pel llenguatge segueix la mateixa estructura que la proposada en l'enunciat, a diferència de les extensions fetes de les que parlaré més endavant. Aquesta es divideix bàsicament en 4 blocs diferents: regles pels procediments, regles per les instruccions, regles per les expressions i tokens del llenguatge. Per mirar de reduïr l'extensió dels visitadors de l'AST, he fet la gramàtica modular, generant noves regles per relegar i reduir la quantitat de feina per cada visitador. La implementació es pot veure en la el fitxer [jsbach.g4](https://github.com/jayagarsi/Practica-LP/tree/master/src/jsbach.g4).
 
 ## Visitadors de l'arbre
 
-Pels visitadors de l'arbre he seguit l'esquema dissenyat en la gramàtica. Tots els detalls es poden veure en el codi. En el que crec que és important fer-hi incís és en la codificació i decodificació de les notes. Tal i com s'explica en la pràctica, les notes es codifiquen del 0 al 51, sent 0 la nota més baixa (A0) i 51 la més alta (C8). La codificació en sí no és complicada però cal tenir en compte varies coses de la notació musical anglo-saxona:
+Pels visitadors de l'arbre he seguit l'esquema dissenyat en la gramàtica. Tots els detalls es poden veure en el codi. En el que crec que és important fer incís és en la codificació i decodificació de les notes. Tal i com s'explica en la pràctica, les notes es codifiquen del 0 al 51, sent 0 la nota més baixa (A0) i 51 la més alta (C8). La codificació en sí no és complicada però cal tenir en compte varies coses de la notació musical anglo-saxona:
 * Les notes van en intervals de 7
 * La primera nota d'un interval és la C i l'última la B, sent l'escala la següent: [C, D, E, F, G, A, B]
 * Per aquesta raó, les dues primeres notes del piano, A0 i B0, pertanyen a un interval que no està sencer en les freqüències de l'instrument.
-Per aquestes raons he decidit dividir les notes per intervals de 7, tractant de manera diferent l'A0 i el B0 doncs al ser el seu valor 0 i 1 són una mica especials. Així doncs, per codificar la nota en un nombre simplement cal fer:
+Per aquestes raons he decidit dividir les notes per intervals de 7, tractant de manera diferent l'A0 i el B0, doncs al ser el seu valor 0 i 1 són una mica especials. Així doncs, per codificar la nota en un nombre simplement cal fer:
 
 ```python
 notesToValues = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
@@ -108,9 +108,9 @@ return notesToValues[val] + offset
 
 Com hi ha extensions, la codificació de la nota és una mica més complicada però per la base amb això n'hi ha prou. La codificació de la nota té dues parts: l'assignació del valor d'aquella nota més un offset que dependrà de la octava. 
 
-L'assignació del valor variarà entre 0 i 6, doncs per cada interval tenim 7 notes. Com la nota C és la primera i la B és l'última, podem enumerar-les de 0 a 7 (C=0, D=1, ..., B=7).
+L'assignació del valor variarà entre 0 i 6, doncs per cada interval tenim 7 notes. Com la nota C és la primera i la B és l'última, podem enumerar-les de 0 a 6 (C=0, D=1, ..., B=6).
 
-Per l'offset hem de fer una mica més de càlculs. El piano té 8 octaves sense comptar les dues primeres notes. Volem que l'interval de notes de la primera octava (C1, .. A1), vagi del 2 al 9, doncs les dues primeres notes es corresponen amb l'A0 i el B0 que seran 0 i 1 respectivament (perquè ho demana l'enunciat). Per aquesta raó, totes les escales queden desplaçades en dues unitats més del que tocaria, doncs tenim aquestes dues notes "ocupant" dues unitats d'un interval de 7 notes. Per aquesta raó a l'offset se li suma un 2. Per altra banda, les notes van de 7 en 7, i com ja he dit, el primer interval comença des del 2 i, per tant, la octava 1 haurà de correspondre a un offset de 0 per poder quedar-nos amb el primer interval. Per aquesta raó, cal restar-li 1 a la octava que toqui doncs els intervals en la codificació van de 0 a 8, mentre que en la notació musical van d'1 a 8 (sense comptar ara l'A0 i el B0).
+Per l'offset hem de fer una mica més de càlculs. El piano té 8 octaves sense comptar les dues primeres notes. Volem que l'interval de notes de la primera octava (C1, .. A1), vagi del 2 al 9, doncs les dues primeres notes es corresponen amb l'A0 i el B0 que seran 0 i 1 respectivament. Per aquesta raó, totes les escales queden desplaçades en dues unitats més del que tocaria i caldrà sumar-li 2 a l'offset. Per altra banda, les notes van de 7 en 7, i com ja he dit, el primer interval comença des del 2 i, per tant, la octava 1 haurà de correspondre a un offset de 2 per poder quedar-nos amb el primer interval. Per aquesta raó, si multipliquem per 7 per obtenir els diferents intervals de les octaves, cal restar-li 1 a la octava que toqui doncs el la primera octava comença en un interval on no li sumem 7 a l'offset. Si no s'ha acabat d'entendre amb la fòrmula potser queda més clar: `(octava-1)*7` defineix l'interval, que per la primera octava ha de contribuïr en 0 (això equivaldria en el codi a `(int(note[1])-1)*7`), mentre que el `+2` desplaça tots els intervals per tenir en compte les dues primeres notes d'un interval que no apareix sencer.
 
 Així doncs, la nota simplement serà la combinació del valor numèric de la nota més l'offset que li correspongui a la seva octava. Per si no s'està segur, amb els valors A0 i B0 també funciona, doncs per exemple per A0 el càcul sería: `notesToValues['A'] + (int(note[1])-1)*7+2 = 5 + (0-1)*7+2 = 5-7+2 = 0`. Si es fa amb B0 i C8, veureu que també dona el resultat correcte. Per tant, la codificació és correcta.
 
@@ -162,7 +162,7 @@ En aquest apartat entraré més en detall en totes les extensions que he realitz
 
 ### Operacions booleanes
 
-La primera extensió afegida a la pràctica és la possibilitat de tenir operacions booleanes com l'AND, l'OR i el NOT. Com George Boole és molt posterior a Bach, el concepte de booleà no existía però també calia representar condicios lògiques com `a == 4 and b > 2`. Per implementar això, el llenguatge de Bach incorpora les mateixes operacions però amb els noms en alemany (doncs és com Bach li hauria dit). La notació es pot veure en el següent codi:
+La primera extensió afegida a la pràctica és la possibilitat de tenir operacions booleanes com l'AND, l'OR i el NOT. Com George Boole és molt posterior a Bach, el concepte de booleà no existía però igualment calia representar condicios lògiques com `a == 4 and b > 2`. Per implementar això, el llenguatge de Bach incorpora les mateixes operacions però amb els noms en alemany (doncs és com Bach li hauria dit). La notació es pot veure en el següent codi:
 
 ```   
 ~~~ Prova Extensió 2 ~~~
@@ -195,7 +195,7 @@ Tal i com ve especificat en el llenguatge, no hi ha valors booleans però 0 és 
 
 ### Nombres i Operacions amb Reals
 
-La següent extensió ha sigut més aviat necessària per poder realitzar sostinguts i bemols, doncs facilita molt la feina. No hi ha molt a dir, la notació és la típica de qualsevol llenguatge, un valor enter seguit d'un punt i un valor fraccionari:
+La següent extensió ha sigut necessària per poder realitzar sostinguts i bemols, doncs facilita molt la feina. No hi ha molt a dir, la notació és la típica de qualsevol llenguatge, un valor enter seguit d'un punt i un valor fraccionari:
 
 ```
 ~~~ Prova Extensio 06 ~~~
@@ -212,7 +212,7 @@ El tractament dels floats no és especial, ara en comptes de tractar tots els va
 
 ### Nombres aleatòris
 
-Per acabar amb les extensions menys musicals, parlaré de la generació de nombres aleatoris que dóna JSBach. Per generar un nombre aleatòri simplement s'ha d'escriure `random [ini end]`, on ini i end són l'interval en que es genera el nombre. Random és una expressió així que ha d'anar acompanyat d'un statement. Un codi d'exemple el podem veure en el següent:
+Per acabar amb les extensions menys musicals, parlaré de la generació de nombres aleatoris que dóna JSBach. Per generar un nombre aleatòri simplement s'ha d'escriure `random [ini end]`, on ini i end són l'interval en que es genera el nombre. Random és una expressió, així que ha d'anar acompanyat d'un statement. Un codi d'exemple el podem veure en el següent:
 
 ```
 ~~~ Prova Extensio 09 ~~~
@@ -234,7 +234,7 @@ La generació del nombre aleatòri en sí, l'he fet utilitzant la funció `randi
 
 ### Sostinguts i Bemols
 
-Ara, podem començar amb les extensions musicals. La primera implementada és la possibilitat de tocar notes amb accidentals, siguin bemolls o sostinguts. La codificació per aquestes m'ha portat bastants problemes, però al final he decidit codificar-ho en la pròpia nota. Aquí és on entren en joc els nombres reals. Abans que res, per escriure accidentals la nota ara anirà seguida d'un `#` o `b`. D'aquesta manera, les notes es poden esciure així `A0# B2b C3`. Si la nota no va seguida de res s'assumeix que és natural. Com el llenguatge està pensat per músics, he cregut que aquesta era la millor notació. Aquí hi tenim un exemple:
+Ara, podem començar amb les extensions musicals. La primera implementada és la possibilitat de tocar notes amb accidentals, siguin bemolls o sostinguts. La codificació per aquestes m'ha portat bastants problemes, però al final he decidit codificar-ho en la pròpia nota. Aquí és on entren en joc els nombres reals. Abans que res, per escriure accidentals la nota ara anirà seguida d'un `#` o `b`. D'aquesta manera, les notes es poden esciure així `A0# B2b C3`. Si la nota no va seguida de res s'assumeix que és natural. Aquesta notació és la mateixa que utilitzen els músics i per aquesta raó he cregut que era la millor. Aquí hi tenim un exemple:
 
 ```
 ~~~ Prova Extensió 01~~~
@@ -290,11 +290,11 @@ if isinstance(note, float):
 
 ```
 
-Com es pot veure, si el valor fraccionari no és ni 0.25 ni 0.75, s'envia un error de que aquella nota no es pot tocar. Per aquesta raó cal anar amb molt de compte a l'hora de tocar notes accidentades posant els seus valors numérics. La gràcia d'aquesta codificació és que podem augmenter els valors de 0.5 en 0.5 per obtenir la següent nota accidentada. Cal anar amb compte però, que sumar 0.5 no implica pujar mig to la nota, si no augmentar-la un to sencer. És una mica estrany i per això recomano deixar la feina bruta al compilador i usar la notació donada. Amb les notes naturals, la diferència entre to i to segueix sent d'una unitat.
+Com es pot veure, si el valor fraccionari no és ni 0.25 ni 0.75, s'envia un error de que aquella nota no es pot tocar. Per aquesta raó cal anar amb molt de compte a l'hora de tocar notes accidentades posant els seus valors numérics. La gràcia d'aquesta codificació és que podem augmenter els valors de 0.5 en 0.5 per obtenir la següent nota accidentada però augmentar en 0.5 no implica pujar mig to la nota, si no augmentar-la un to sencer. És poc intuïtiu i per això recomano deixar la feina bruta al compilador i usar la notació donada. Amb les notes naturals, la diferència entre to i to segueix sent d'una unitat.
 
 ### Canvi de Tempo de la Negra (base)
 
-Un altra extensió afegida important pels músics, és la possibilitat de canviar el tempo base de la negra. D'aquesta manera es pot canviar el ritme de tota la partitura de manera bastant fàcil. Per poder canviar-lo, en el llenguatge s'haurà d'escriure `_tmp_ <- val`. És a dir que simplement s'ha de fer una assignació normal però a una variable especial. He escollit dir-li `_tmp_` per separar el que poden ser identificadors d'aquesta variable especial. L'assignació es pot fer varies vegades en el codi, però el valor que s'assigni a la partitura serà l'últim. Per canviar el tempo en el lilypond el que s'ha de fer és afegir `\tempo 4 = val` dins de la part de l'absolute, on 4 és el temps de la negra i val el ritme que se li assigni. Per defecte és 120. A més a més, es llençarà un error quan el ritme assignat tingui valor 0 o negatiu, doncs no té cap sentit musicalment. Sintàcticament es força que el valor assignat a `_tmp_` sigui un valor numéric, és a dir que no se li pot assignar una expressió, per evitar errors.
+UUn altra extensió afegida important pels músics, és la possibilitat de canviar el tempo base de la negra. D'aquesta manera es pot canviar el ritme de tota la partitura de manera fàcil. Per poder canviar-lo, en el llenguatge s'haurà d'escriure la instrucció `_tmp_ <- val`. És a dir que simplement s'ha de fer una assignació normal però a una variable especial. He escollit dir-li `_tmp_` per separar el que poden ser identificadors d'aquesta variable especial. L'assignació es pot fer varies vegades en el codi, però el valor que s'assigni a la partitura serà l'últim. Per canviar el tempo en el lilypond el que s'ha de fer és afegir `\tempo 4 = val` dins de la part de l'absolute, on 4 és el temps de la negra i val el ritme que se li assigni. Per defecte és 120. A més a més, es llençarà un error quan el ritme assignat tingui valor 0 o negatiu, doncs no té cap sentit musicalment. Sintàcticament es força que el valor assignat a `_tmp_` sigui un valor numéric, és a dir que no se li pot assignar una expressió, per evitar errors.
 
 Per un exemple en JSBach:
 
@@ -322,7 +322,7 @@ Ara ve un altra extensió que també ha portat bastant temps, però que per gene
 | ***Valor JSBach***   | 1      | 2      | 4     | 6       | 8           |
 | ***Valor Lilypond*** | 1      | 2      | 4     | 8       | 16          |
 
-D'aquesta manera amb la pròpia nota ja podem definir el tempo que tindrà, sense afegir res més. Per altra banda, la codificació de la nota es complica més. Per facilitar-ho, he decidit generar "nous" intervals, per les notes amb tempo. És a dir, les notes que siguin rodones en comptes de codificar-se de 0 a 51 es codificaran de 53 a 104. De manera general, per cada ritme el que faig és sumar-li 52+1 multiplicat pel tempo que tinguem, d'aquesta manera genero els "nous" intervals per cada ritme diferent. Abans d'entrar en la implementació, un exemple en JSBach seria el següent:
+D'aquesta manera amb la pròpia nota ja podem definir el tempo que tindrà, sense afegir res més. Per altra banda, la codificació de la nota es complica més. Per simplificar-ho, he decidit generar "nous" intervals, per les notes amb tempo. És a dir, les notes que siguin rodones en comptes de codificar-se de 0 a 51 es codificaran de 53 a 104. De manera general, per cada ritme el que faig és sumar-li 52+1 multiplicat pel tempo que tinguem, d'aquesta manera genero els "nous" intervals per cada ritme diferent. Abans d'entrar en la implementació, un exemple en JSBach seria el següent:
 
 ```
 ~~~ Prova Extensio 08 ~~~
@@ -394,7 +394,7 @@ Que en partitura es tradueix a:
 
 L'armadura s'ha d'escriure tota junta, és a dir A major en JSBach serà Amajor, si no donarà error lèxic. Cal destacar que Lilypond tracta les armadures de manera estranya, en el sentit que canvia l'armadura però les notes que haurien de ser sostingudes per exemple, les deixa naturals. Això és una decisió que Lilypond ha prés (sense molt de sentit) que cal tenir en compte a l'hora de programar.
 
-la notació en lilypond és la següent `\key a \major` dins d'un bloc absolute i amb l'armadura que calgui.
+Per canviar l'armadura en Lilypond cal escriure el següent dins d'un bloc absolute: `\key a \major`, amb l'armadura que calgui.
 
 ### Canvi de tempo del compàs
 
@@ -415,11 +415,11 @@ Que en partitura:
 
 ![ext05](auxiliar/partitura_prova_extensio_07.png)
 
-Com ja he dit, si es posa un valor fora de l'interval declarat, es donarà error lèxic doncs està codificat en la pròpia gramàtica. Per traduïr-ho a Lilypond, cal escriure dins del bloc absolute `\time 3/4`.
+Com ja he dit, si es posa un valor fora de l'interval declarat, es donarà error lèxic doncs està codificat en la pròpia gramàtica. Per traduïr-ho a Lilypond, cal escriure dins del bloc absolute `\time 3/4`, amb el compas que toqui.
 
 ### Acords
  
-Per acbar, l'última extensió que he implementat, ha sigut la possibilitat de tocar acords. La notació en JSBach per fer-ho, és fer una llista de llistes. Per exemple, de la llista: `{ A4 C5 {C3 C4 C1}}`, les notes `{C3 C4 C1}` s'interpretaran com un acord. JSBach permet definir múltiples llistes dins de llistes, però realment només s'interpretaràn com acords les llistes dobles, doncs no té sentit tocar l'acord d'un acord. Un exemple de codi en JSBach:
+Per acabar, l'última extensió que he implementat, ha sigut la possibilitat de tocar acords. La notació en JSBach per fer-ho, és fer una llista de llistes. Per exemple, de la llista: `{ A4 C5 {C3 C4 C1}}`, les notes `{C3 C4 C1}` s'interpretaran com un acord. JSBach permet definir múltiples llistes dins de llistes, però realment només s'interpretaràn com acords les llistes dobles, doncs no té sentit tocar l'acord d'un acord. Si es troben més llistes dins de la segona llista, aquestes s'ignoren. Un exemple de codi en JSBach:
 
 ```
 
@@ -441,7 +441,9 @@ Traduït a partitura:
 
 ![ext06](auxiliar/partitura_prova_extensio_03.png)
 
-Per definir els acords en Lilypond cal escriure les notes entre `<>`. D'aquesta manera l'acord `{{C4 D4 E4}}` es transforma en `<c' d' e'>`. Simplement, per tractar-ho en el TreeVisitor el que faig és comprovar si la llista passada té una llista dins o no. Si la té s'haurà de tocar un acord i si no una sola nota. Cal destacar un fet molt important relacionat amb l'extensió dels temps de cada nota. A un acord se li pot assignar un tempo concret, però cal tenir que les notes d'un acord tenen totes la mateixa durada (rodona, blanca, negra, corxera o semicorxera). Per aquesta raó, lilypond considera error lèxic donar un ritme dins d'un acord. Per mantenir la coherència amb això, JSBach permet posar el ritme dins dels acords però tenint en compte que com a ritme general s'agafarà el de la primera nota que es defineixi.
+Per definir els acords en Lilypond cal escriure les notes entre `<>`. D'aquesta manera l'acord `{{C4 D4 E4}}` es transforma en `<c' d' e'>`. Simplement, per tractar-ho en el TreeVisitor el que faig és comprovar si la llista passada té una llista dins o no. Si la té s'haurà de tocar un acord i si no una sola nota. 
+
+Cal destacar un fet molt important relacionat amb l'extensió dels temps de cada nota. A un acord se li pot assignar un tempo concret, però Lilypond estableix que les notes d'un acord han de tenir totes la mateixa durada (rodona, blanca, negra, corxera o semicorxera). Per aquesta raó, lilypond considera error lèxic donar un ritme dins d'un acord. Per mantenir la coherència amb això, JSBach permet posar el ritme dins dels acords però tenint en compte que com a ritme de tot l'acord, s'agafarà el de la primera nota que es defineixi. Per exemple si es toca l'acord `{{C4 D3 E2,8}}`, el ritme de l'acord serà 8, doncs és el primer que està definit dins de l'acord. Per defecte serà tempo de negra, si no es defineix cap tempo.
 
 
 ## Autor i Referències
