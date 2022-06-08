@@ -10,7 +10,6 @@ Main |:
 :|
 
 IsPrime n k |:
-    notes <- {A B C D}
     if n = 1 oder n = 4 |:
         <!> "El nombre no es primer"
     :|
@@ -66,6 +65,7 @@ IsPrime n k |:
 
 PlaySomeNote a |:
     ~~~ per tocar algunes notes aleatories amb accidentals ~~~
+    notes <- {A A5 B3 D5 C3}
     dec <- 0
     randdec <- random[1 20]
     if randdec = 1 |:
@@ -74,5 +74,5 @@ PlaySomeNote a |:
     if randdec = 2 |:
         dec <- 0.75
     :|
-    <:> a % 30 + 10 + dec              ~~~ asseguro que sigui una nota tocable ~~~
+    <:> notes[a%#notes+1]+dec              ~~~ asseguro que sigui una nota tocable ~~~
 :|

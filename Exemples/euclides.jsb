@@ -8,19 +8,15 @@ Main |:
 :|
 
 Euclides a b |:
+	notes <- {A A5 B3 C4# D F}
+	size <- #notes
     while a /= b |:
-        <:> a
-        <:> b
         if a > b |:
             a <- a - b
+            <:> notes[a%size+1]
         :| else |:
             b <- b - a
-        :|
-        if a > D1 |:
-            <:> a
-            <:> a-b
-            <:> a+b
-            <:> b
+            <:> notes[b%size+1]
         :|
     :|
     <!> "El seu MCD es" a
